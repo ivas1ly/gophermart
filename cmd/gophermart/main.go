@@ -1,7 +1,12 @@
 package main
 
-import "github.com/ivas1ly/gophermart/internal/app"
+import (
+	"github.com/ivas1ly/gophermart/cmd/config"
+	"github.com/ivas1ly/gophermart/internal/app"
+)
 
 func main() {
-	app.Run()
+	cfg := config.New()
+
+	app.Run(cfg)
 }
