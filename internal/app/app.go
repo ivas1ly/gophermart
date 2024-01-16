@@ -6,7 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 
-	"github.com/ivas1ly/gophermart/cmd/config"
+	"github.com/ivas1ly/gophermart/internal/config"
 )
 
 func Run(cfg config.Config) {
