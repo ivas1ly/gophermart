@@ -5,19 +5,34 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"time"
 )
 
 const (
 	defaultRunHost              = "localhost"
 	defaultRunPort              = "8080"
+	defaultLogLevel             = "info"
+	defaultDatabaseConnTimeout  = 5 * time.Second
+	defaultDatabaseConnAttempts = 3
 	exampleDatabaseDSN          = "postgres://postgres:postgres@localhost:5432/gophermart?sslmode=disable"
 	exampleAccrualSystemAddress = "http://localhost:3560"
 )
 
 type Config struct {
+	App
+	DB
+}
+
+type App struct {
 	RunAddress           string
-	DatabaseURI          string
+	LogLevel             string
 	AccrualSystemAddress string
+}
+
+type DB struct {
+	DatabaseURI          string
+	DatabaseConnTimeout  time.Duration
+	DatabaseConnAttempts int
 }
 
 func New() Config {
@@ -48,6 +63,11 @@ func New() Config {
 	if accrualSystemAddress := os.Getenv("ACCRUAL_SYSTEM_ADDRESS"); accrualSystemAddress != "" {
 		cfg.AccrualSystemAddress = accrualSystemAddress
 	}
+
+	cfg.DatabaseConnAttempts = defaultDatabaseConnAttempts
+	cfg.DatabaseConnTimeout = defaultDatabaseConnTimeout
+
+	cfg.LogLevel = defaultLogLevel
 
 	fmt.Printf("%+v\n\n", cfg)
 
