@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/ivas1ly/gophermart/internal/app"
 	"github.com/ivas1ly/gophermart/internal/config"
 )
@@ -8,5 +10,7 @@ import (
 func main() {
 	cfg := config.New()
 
-	app.Run(cfg)
+	if err := app.Run(cfg); err != nil {
+		log.Printf("application terminated with error: %v", err)
+	}
 }
