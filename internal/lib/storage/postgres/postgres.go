@@ -37,7 +37,7 @@ func New(ctx context.Context, dsn string, attempts int, timeout time.Duration) (
 	}
 
 	return &DB{
-		Pool:    nil,
+		Pool:    pool,
 		Builder: squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar), // PostgreSQL placeholder format
 	}, err
 }
