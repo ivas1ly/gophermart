@@ -12,32 +12,35 @@ import (
 )
 
 type userServiceProvider struct {
+	log            *zap.Logger
+	userHandler    *user.Handler
 	userRepository repository.UserRepository
 	userService    service.UserService
-	userHandler    *user.Handler
 }
 
-func newUserServiceProvider() *userServiceProvider {
-	return &userServiceProvider{}
+func newUserServiceProvider(log *zap.Logger) *userServiceProvider {
+	return &userServiceProvider{
+		log: log.With(zap.String("service", "user")),
+	}
 }
 
 func (s *userServiceProvider) UserRepository(db *postgres.DB) repository.UserRepository {
 	if s.userRepository == nil {
-		s.userRepository = userRepository.NewRepository(db)
+		s.userRepository = userRepository.NewRepository(db, s.log)
 	}
 	return s.userRepository
 }
 
 func (s *userServiceProvider) UserService(ur repository.UserRepository) service.UserService {
 	if s.userService == nil {
-		s.userService = userService.NewService(ur)
+		s.userService = userService.NewService(ur, s.log)
 	}
 	return s.userService
 }
 
-func (s *userServiceProvider) UserHandler(log *zap.Logger) *user.Handler {
+func (s *userServiceProvider) UserHandler() *user.Handler {
 	if s.userHandler == nil {
-		s.userHandler = user.NewHandler(s.UserService(s.userRepository), log)
+		s.userHandler = user.NewHandler(s.UserService(s.userRepository), s.log)
 	}
 	return s.userHandler
 }
