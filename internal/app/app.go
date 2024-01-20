@@ -5,11 +5,13 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/gophermart/internal/config"
 	"github.com/ivas1ly/gophermart/internal/lib/logger"
 	"github.com/ivas1ly/gophermart/internal/lib/storage/postgres"
+	"github.com/ivas1ly/gophermart/internal/middleware/reqlogger"
 )
 
 type App struct {
@@ -39,6 +41,11 @@ func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
 
 	a.log.Info("init new router")
 	a.router = chi.NewRouter()
+	a.router.Use(
+		reqlogger.New(a.log),
+		middleware.Recoverer,
+		middleware.Compress(cfg.CompressLevel),
+	)
 
 	a.log.Info("init user service")
 	usp := newUserServiceProvider(a.log)

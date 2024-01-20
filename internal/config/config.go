@@ -11,6 +11,7 @@ import (
 const (
 	defaultRunHost              = "localhost"
 	defaultRunPort              = "8080"
+	defaultCompressLevel        = 5
 	defaultLogLevel             = "info"
 	defaultDatabaseConnTimeout  = 5 * time.Second
 	defaultDatabaseConnAttempts = 3
@@ -21,10 +22,10 @@ const (
 type Config struct {
 	App
 	DB
+	HTTP
 }
 
 type App struct {
-	RunAddress           string
 	LogLevel             string
 	AccrualSystemAddress string
 }
@@ -33,6 +34,11 @@ type DB struct {
 	DatabaseURI          string
 	DatabaseConnTimeout  time.Duration
 	DatabaseConnAttempts int
+}
+
+type HTTP struct {
+	RunAddress    string
+	CompressLevel int
 }
 
 func New() Config {
@@ -68,6 +74,8 @@ func New() Config {
 	cfg.DatabaseConnTimeout = defaultDatabaseConnTimeout
 
 	cfg.LogLevel = defaultLogLevel
+
+	cfg.CompressLevel = defaultCompressLevel
 
 	fmt.Printf("%+v\n\n", cfg)
 
