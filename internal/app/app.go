@@ -10,6 +10,7 @@ import (
 
 	"github.com/ivas1ly/gophermart/internal/config"
 	"github.com/ivas1ly/gophermart/internal/lib/logger"
+	"github.com/ivas1ly/gophermart/internal/lib/migrate"
 	"github.com/ivas1ly/gophermart/internal/lib/storage/postgres"
 	"github.com/ivas1ly/gophermart/internal/middleware/reqlogger"
 )
@@ -38,6 +39,14 @@ func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
 
 	a.log.Info("database connection established")
 	a.db = db
+
+	a.log.Info("trying to up migrations")
+	err = migrate.Run(ctx, db.Pool)
+	if err != nil {
+		a.log.Info("can't run migrations", zap.Error(err))
+		return nil, err
+	}
+	a.log.Info("migrations up success")
 
 	a.log.Info("init new router")
 	a.router = chi.NewRouter()
