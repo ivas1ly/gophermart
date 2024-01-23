@@ -31,7 +31,7 @@ func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
 	a.cfg = cfg
 
 	a.log.Info("init the database pool")
-	db, err := postgres.New(ctx, cfg.DatabaseURI, cfg.DatabaseConnAttempts, cfg.DatabaseConnTimeout)
+	db, err := postgres.New(ctx, cfg.DatabaseURI, cfg.DatabaseConnAttempts, cfg.DatabaseConnTimeout, a.log)
 	if err != nil {
 		a.log.Error("can't create pgx pool", zap.Error(err))
 		return nil, err

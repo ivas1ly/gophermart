@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/Masterminds/squirrel"
+	zapadapter "github.com/jackc/pgx-zap"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/tracelog"
 	"go.uber.org/zap"
 )
 
@@ -15,10 +17,15 @@ type DB struct {
 	Builder squirrel.StatementBuilderType
 }
 
-func New(ctx context.Context, dsn string, attempts int, timeout time.Duration) (*DB, error) {
+func New(ctx context.Context, dsn string, attempts int, timeout time.Duration, log *zap.Logger) (*DB, error) {
 	cfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse config: %w", err)
+	}
+
+	cfg.ConnConfig.Tracer = &tracelog.TraceLog{
+		Logger:   zapadapter.NewLogger(log),
+		LogLevel: tracelog.LogLevelTrace,
 	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, cfg)

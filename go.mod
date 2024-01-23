@@ -5,6 +5,7 @@ go 1.21.6
 require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/go-chi/chi/v5 v5.0.11
+	github.com/jackc/pgx-zap v0.0.0-20221202020421-94b1cb2f889f
 	github.com/jackc/pgx/v5 v5.5.2
 	github.com/pressly/goose/v3 v3.17.0
 	go.uber.org/zap v1.26.0
