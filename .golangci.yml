@@ -15,6 +15,9 @@ linters-settings:
   goconst:
     min-len: 2
     min-occurrences: 2
+  gomnd:
+    ignored-files:
+      - 'argon2id.go'
 
 linters:
   disable-all: true

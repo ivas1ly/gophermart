@@ -21,8 +21,8 @@ const (
 
 type Config struct {
 	App
-	DB
 	HTTP
+	DB
 }
 
 type App struct {
