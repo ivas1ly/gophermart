@@ -33,7 +33,7 @@ type Handler struct {
 	tokenAuth   *jwtauth.JWTAuth
 }
 
-func NewHandler(userService service.UserService, log *zap.Logger, validate *validator.Validate) *Handler {
+func NewHandler(userService service.UserService, validate *validator.Validate, log *zap.Logger) *Handler {
 	tokenAuth := jwtauth.New("HS256", jwt.SigningKey, nil)
 
 	return &Handler{

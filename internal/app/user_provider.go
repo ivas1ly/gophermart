@@ -41,7 +41,7 @@ func (s *userServiceProvider) UserService(ur repository.UserRepository) service.
 
 func (s *userServiceProvider) UserHandler(validate *validator.Validate) *user.Handler {
 	if s.userHandler == nil {
-		s.userHandler = user.NewHandler(s.UserService(s.userRepository), s.log, validate)
+		s.userHandler = user.NewHandler(s.UserService(s.userRepository), validate, s.log)
 	}
 	return s.userHandler
 }
