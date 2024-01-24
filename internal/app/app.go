@@ -13,6 +13,7 @@ import (
 	"github.com/ivas1ly/gophermart/internal/lib/logger"
 	"github.com/ivas1ly/gophermart/internal/lib/migrate"
 	"github.com/ivas1ly/gophermart/internal/lib/storage/postgres"
+	"github.com/ivas1ly/gophermart/internal/middleware/decompress"
 	"github.com/ivas1ly/gophermart/internal/middleware/reqlogger"
 )
 
@@ -55,6 +56,7 @@ func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
 		reqlogger.New(a.log),
 		middleware.Recoverer,
 		middleware.Compress(cfg.CompressLevel),
+		decompress.New(a.log),
 	)
 
 	a.log.Info("init user service")
