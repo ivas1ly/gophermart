@@ -6,6 +6,8 @@ import (
 	"net"
 	"os"
 	"time"
+
+	"github.com/ivas1ly/gophermart/internal/utils/jwt"
 )
 
 const (
@@ -17,6 +19,10 @@ const (
 	defaultDatabaseConnAttempts = 3
 	exampleDatabaseDSN          = "postgres://postgres:postgres@localhost:5432/gophermart?sslmode=disable"
 	exampleAccrualSystemAddress = "http://localhost:3560"
+)
+
+var (
+	defaultSigningKey = []byte("36626d331c8c44f2d72f348f36323743598e267e86b3e4aca27c5b433247ea72")
 )
 
 type Config struct {
@@ -74,6 +80,7 @@ func New() Config {
 	cfg.DatabaseConnTimeout = defaultDatabaseConnTimeout
 
 	cfg.LogLevel = defaultLogLevel
+	jwt.SigningKey = defaultSigningKey
 
 	cfg.CompressLevel = defaultCompressLevel
 

@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/gophermart/internal/controller/user"
@@ -38,9 +39,9 @@ func (s *userServiceProvider) UserService(ur repository.UserRepository) service.
 	return s.userService
 }
 
-func (s *userServiceProvider) UserHandler() *user.Handler {
+func (s *userServiceProvider) UserHandler(validate *validator.Validate) *user.Handler {
 	if s.userHandler == nil {
-		s.userHandler = user.NewHandler(s.UserService(s.userRepository), s.log)
+		s.userHandler = user.NewHandler(s.UserService(s.userRepository), s.log, validate)
 	}
 	return s.userHandler
 }

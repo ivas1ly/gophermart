@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/gophermart/internal/config"
@@ -57,9 +58,11 @@ func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
 	)
 
 	a.log.Info("init user service")
+	validate := validator.New(validator.WithRequiredStructEnabled())
+
 	usp := newUserServiceProvider(a.log)
 	usp.UserRepository(db)
-	usp.UserHandler().Register(a.router)
+	usp.UserHandler(validate).Register(a.router)
 
 	return a, nil
 }

@@ -1,7 +1,12 @@
 package service
 
-import "context"
+import (
+	"context"
+
+	"github.com/ivas1ly/gophermart/internal/entity"
+)
 
 type UserService interface {
-	Create(ctx context.Context) error
+	Register(ctx context.Context, username, password string) (*entity.User, error)
+	Login(ctx context.Context, username, password string) (*entity.User, error)
 }
