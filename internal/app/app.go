@@ -2,7 +2,11 @@ package app
 
 import (
 	"context"
+	"errors"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -25,12 +29,11 @@ type App struct {
 }
 
 func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
-	a := &App{}
-
-	a.log = logger.New(cfg.App.LogLevel, logger.NewDefaultLoggerConfig()).
-		With(zap.String("app", "gophermart"))
-
-	a.cfg = cfg
+	a := &App{
+		cfg: cfg,
+		log: logger.New(cfg.App.LogLevel, logger.NewDefaultLoggerConfig()).
+			With(zap.String("app", "gophermart")),
+	}
 
 	a.log.Info("init the database pool")
 	db, err := postgres.New(ctx, cfg.DatabaseURI, cfg.DatabaseConnAttempts, cfg.DatabaseConnTimeout, a.log)
@@ -71,23 +74,58 @@ func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
 
 func (a *App) Run(ctx context.Context) error {
 	if a.db.Pool != nil {
-		defer a.db.Pool.Close()
+		defer func() {
+			a.log.Info("close database pool")
+			a.db.Pool.Close()
+		}()
 	}
 
-	err := a.startHTTP(ctx)
-	if err != nil {
-		return err
+	notifyCtx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	defer stop()
+
+	if err := a.startHTTP(notifyCtx); err != nil {
+		a.log.Error("unexpected server error", zap.Error(err))
 	}
+
+	a.log.Info("server was successfully shut down")
 
 	return nil
 }
 
 func (a *App) startHTTP(ctx context.Context) error {
-	a.log.Info("start http server", zap.String("addr", a.cfg.RunAddress))
+	server := &http.Server{
+		Addr:              a.cfg.RunAddress,
+		Handler:           a.router,
+		ReadTimeout:       a.cfg.ReadTimeout,
+		ReadHeaderTimeout: a.cfg.ReadHeaderTimeout,
+		WriteTimeout:      a.cfg.WriteTimeout,
+		IdleTimeout:       a.cfg.IdleTimeout,
+	}
 
-	err := http.ListenAndServe(a.cfg.RunAddress, a.router)
-	if err != nil {
-		panic(err)
+	go func() {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			a.log.Error("unexpected server error", zap.Error(err))
+		}
+	}()
+
+	a.log.Info("server started", zap.String("addr", a.cfg.RunAddress))
+	<-ctx.Done()
+
+	a.log.Info("gracefully shutting down...")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), a.cfg.ShutdownTimeout)
+	defer cancel()
+
+	go func() {
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			a.log.Error("unexpected server shutdown error", zap.Error(err))
+		}
+	}()
+
+	<-shutdownCtx.Done()
+	if errors.Is(shutdownCtx.Err(), context.DeadlineExceeded) {
+		a.log.Info("timeout exceeded, forcing shutdown")
+		return shutdownCtx.Err()
 	}
 
 	return nil

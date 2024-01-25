@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"time"
@@ -19,6 +20,11 @@ const (
 	defaultDatabaseConnAttempts = 3
 	exampleDatabaseDSN          = "postgres://postgres:postgres@localhost:5432/gophermart?sslmode=disable"
 	exampleAccrualSystemAddress = "http://localhost:3560"
+	defaultReadTimeout          = 10 * time.Second
+	defaultReadHeaderTimeout    = 5 * time.Second
+	defaultWriteTimeout         = 10 * time.Second
+	defaultIdleTimeout          = 1 * time.Minute
+	defaultShutdownTimeout      = 5 * time.Second
 )
 
 var (
@@ -43,14 +49,35 @@ type DB struct {
 }
 
 type HTTP struct {
-	RunAddress    string
-	CompressLevel int
+	RunAddress        string
+	CompressLevel     int
+	ReadTimeout       time.Duration
+	ReadHeaderTimeout time.Duration
+	WriteTimeout      time.Duration
+	IdleTimeout       time.Duration
+	ShutdownTimeout   time.Duration
 }
 
 func New() Config {
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 
-	cfg := Config{}
+	cfg := Config{
+		App: App{
+			LogLevel: defaultLogLevel,
+		},
+		HTTP: HTTP{
+			CompressLevel:     defaultCompressLevel,
+			ReadTimeout:       defaultReadTimeout,
+			ReadHeaderTimeout: defaultReadHeaderTimeout,
+			WriteTimeout:      defaultWriteTimeout,
+			IdleTimeout:       defaultIdleTimeout,
+			ShutdownTimeout:   defaultShutdownTimeout,
+		},
+		DB: DB{
+			DatabaseConnTimeout:  defaultDatabaseConnTimeout,
+			DatabaseConnAttempts: defaultDatabaseConnAttempts,
+		},
+	}
 
 	runAddressUsage := fmt.Sprintf("HTTP server endpoint, example: %q or %q",
 		net.JoinHostPort(defaultRunHost, defaultRunPort), net.JoinHostPort("", defaultRunPort))
@@ -76,15 +103,9 @@ func New() Config {
 		cfg.AccrualSystemAddress = accrualSystemAddress
 	}
 
-	cfg.DatabaseConnAttempts = defaultDatabaseConnAttempts
-	cfg.DatabaseConnTimeout = defaultDatabaseConnTimeout
-
-	cfg.LogLevel = defaultLogLevel
 	jwt.SigningKey = defaultSigningKey
 
-	cfg.CompressLevel = defaultCompressLevel
-
-	fmt.Printf("%+v\n\n", cfg)
+	log.Println("loaded config:", fmt.Sprintf("%+v", cfg))
 
 	return cfg
 }

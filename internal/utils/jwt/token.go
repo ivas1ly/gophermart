@@ -8,6 +8,10 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	OneDay = 24 * time.Hour
+)
+
 var SigningKey []byte
 
 func NewToken(key []byte, id string) (string, error) {
@@ -20,7 +24,7 @@ func NewToken(key []byte, id string) (string, error) {
 		Issuer:    "gophermart",
 		Subject:   id,
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(OneDay)),
 		NotBefore: jwt.NewNumericDate(time.Now()),
 		ID:        tokenID.String(),
 	}
