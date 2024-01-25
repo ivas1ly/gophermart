@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -17,9 +18,15 @@ func New(log *zap.Logger) func(next http.Handler) http.Handler {
 		l.Info("added logger middleware")
 
 		logFn := func(w http.ResponseWriter, r *http.Request) {
+			reqHeaders := make([]string, 0)
+			for k, v := range r.Header {
+				reqHeaders = append(reqHeaders, k+"="+strings.Join(v, ","))
+			}
+
 			entry := l.With(
 				zap.String("uri", r.RequestURI),
 				zap.String("method", r.Method),
+				zap.String("headers", strings.Join(reqHeaders, ", ")),
 			)
 
 			buf, err := io.ReadAll(r.Body)
