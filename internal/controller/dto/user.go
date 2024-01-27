@@ -11,7 +11,6 @@ type UserResponse struct {
 	Username  string `json:"username"`
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
-	AuthToken string `json:"auth_token"`
 }
 
 type UserRequest struct {

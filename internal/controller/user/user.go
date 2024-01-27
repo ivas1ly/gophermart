@@ -20,6 +20,9 @@ import (
 )
 
 const (
+	AuthorizationSchema = "Bearer"
+	AuthorizationHeader = "Authorization"
+
 	MsgEmptyBody           = "empty request body"
 	MsgCantParseBody       = "can't parse request body"
 	MsgInvalidRequest      = "invalid request format"
@@ -103,8 +106,8 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, render.M{"message": MsgInternalServerError})
 		return
 	}
-	response.AuthToken = authToken
 
+	w.Header().Set(AuthorizationHeader, fmt.Sprintf("%s %s", AuthorizationSchema, authToken))
 	w.WriteHeader(http.StatusOK)
 	render.JSON(w, r, response)
 }
@@ -159,8 +162,8 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		render.JSON(w, r, render.M{"message": MsgInternalServerError})
 		return
 	}
-	response.AuthToken = authToken
 
+	w.Header().Set(AuthorizationHeader, fmt.Sprintf("%s %s", AuthorizationSchema, authToken))
 	w.WriteHeader(http.StatusOK)
 	render.JSON(w, r, response)
 }
