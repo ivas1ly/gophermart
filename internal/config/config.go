@@ -62,7 +62,8 @@ func New() Config {
 
 	cfg := Config{
 		App: App{
-			LogLevel: defaultLogLevel,
+			LogLevel:   defaultLogLevel,
+			SigningKey: defaultSigningKey,
 		},
 		HTTP: HTTP{
 			CompressLevel:     defaultCompressLevel,
