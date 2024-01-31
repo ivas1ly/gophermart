@@ -18,6 +18,7 @@ linters-settings:
   gomnd:
     ignored-files:
       - 'argon2id.go'
+      - 'lunh.go'
 
 linters:
   disable-all: true
