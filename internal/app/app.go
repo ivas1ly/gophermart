@@ -19,6 +19,7 @@ import (
 	"github.com/ivas1ly/gophermart/internal/lib/storage/postgres"
 	"github.com/ivas1ly/gophermart/internal/middleware/decompress"
 	"github.com/ivas1ly/gophermart/internal/middleware/reqlogger"
+	"github.com/ivas1ly/gophermart/internal/utils/jwt"
 )
 
 type App struct {
@@ -34,6 +35,7 @@ func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
 		log: logger.New(cfg.App.LogLevel, logger.NewDefaultLoggerConfig()).
 			With(zap.String("app", "gophermart")),
 	}
+	jwt.SigningKey = cfg.SigningKey
 
 	a.log.Info("init the database pool")
 	db, err := postgres.New(ctx, cfg.DatabaseURI, cfg.DatabaseConnAttempts, cfg.DatabaseConnTimeout, a.log)

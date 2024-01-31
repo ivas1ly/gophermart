@@ -7,8 +7,6 @@ import (
 	"net"
 	"os"
 	"time"
-
-	"github.com/ivas1ly/gophermart/internal/utils/jwt"
 )
 
 const (
@@ -32,14 +30,15 @@ var (
 )
 
 type Config struct {
+	DB
 	App
 	HTTP
-	DB
 }
 
 type App struct {
 	LogLevel             string
 	AccrualSystemAddress string
+	SigningKey           []byte
 }
 
 type DB struct {
@@ -102,8 +101,6 @@ func New() Config {
 	if accrualSystemAddress := os.Getenv("ACCRUAL_SYSTEM_ADDRESS"); accrualSystemAddress != "" {
 		cfg.AccrualSystemAddress = accrualSystemAddress
 	}
-
-	jwt.SigningKey = defaultSigningKey
 
 	log.Println("loaded config:", fmt.Sprintf("%+v", cfg))
 
