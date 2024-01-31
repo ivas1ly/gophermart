@@ -14,6 +14,7 @@ require (
 	github.com/jackc/pgx-zap v0.0.0-20221202020421-94b1cb2f889f
 	github.com/jackc/pgx/v5 v5.5.2
 	github.com/pressly/goose/v3 v3.17.0
+	github.com/shopspring/decimal v1.3.1
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.18.0
 )

@@ -1,11 +1,13 @@
-package user
+package controller
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
@@ -15,8 +17,8 @@ import (
 
 	"github.com/ivas1ly/gophermart/internal/controller/dto"
 	"github.com/ivas1ly/gophermart/internal/entity"
-	"github.com/ivas1ly/gophermart/internal/service"
 	"github.com/ivas1ly/gophermart/internal/utils/jwt"
+	"github.com/ivas1ly/gophermart/internal/utils/lunh"
 )
 
 const (
@@ -29,14 +31,21 @@ const (
 	MsgInternalServerError = "internal server error"
 )
 
+type UserService interface {
+	Register(ctx context.Context, username, password string) (*entity.User, error)
+	Login(ctx context.Context, username, password string) (*entity.User, error)
+	NewOrder(ctx context.Context, userID, orderNumber string) (*entity.Order, error)
+	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
+}
+
 type Handler struct {
-	userService service.UserService
+	userService UserService
 	log         *zap.Logger
 	validate    *validator.Validate
 	tokenAuth   *jwtauth.JWTAuth
 }
 
-func NewHandler(userService service.UserService, validate *validator.Validate, log *zap.Logger) *Handler {
+func NewHandler(userService UserService, validate *validator.Validate, log *zap.Logger) *Handler {
 	tokenAuth := jwtauth.New("HS256", jwt.SigningKey, nil)
 
 	return &Handler{
@@ -56,6 +65,9 @@ func (h *Handler) Register(router *chi.Mux) {
 		// Protected routes
 		r.Group(func(r chi.Router) {
 			r.Use(jwtauth.Verifier(h.tokenAuth), jwtauth.Authenticator(h.tokenAuth))
+
+			r.Post("/orders", h.order)
+			r.Get("/orders", h.orders)
 			r.Post("/balance", h.balance)
 		})
 	})
@@ -168,9 +180,84 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, response)
 }
 
+func (h *Handler) order(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	token, _, _ := jwtauth.FromContext(r.Context())
+
+	userID := token.Subject()
+
+	buf, err := io.ReadAll(r.Body)
+	if len(buf) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": MsgEmptyBody})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": "can't read request body"})
+		return
+	}
+
+	orderNumber := strings.TrimSpace(string(buf))
+	ok := lunh.CheckNumber(orderNumber)
+	if !ok {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		render.JSON(w, r, render.M{"message": "incorrect order number format"})
+		return
+	}
+
+	order, err := h.userService.NewOrder(r.Context(), userID, orderNumber)
+	if errors.Is(err, entity.ErrUploadedByThisUser) {
+		w.WriteHeader(http.StatusOK)
+		render.JSON(w, r, render.M{"message": entity.ErrUploadedByThisUser.Error()})
+		return
+	}
+	if errors.Is(err, entity.ErrUploadedByAnotherUser) {
+		w.WriteHeader(http.StatusConflict)
+		render.JSON(w, r, render.M{"message": entity.ErrUploadedByAnotherUser.Error()})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		render.JSON(w, r, render.M{"message": MsgInternalServerError})
+		return
+	}
+
+	response := dto.ToOrderResponse(order)
+
+	w.WriteHeader(http.StatusAccepted)
+	render.JSON(w, r, response)
+}
+
+func (h *Handler) orders(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	token, _, _ := jwtauth.FromContext(r.Context())
+
+	userID := token.Subject()
+
+	orders, err := h.userService.GetOrders(r.Context(), userID)
+	if errors.Is(err, entity.ErrNoOrdersFound) {
+		w.WriteHeader(http.StatusNoContent)
+		render.JSON(w, r, render.M{"message": MsgInternalServerError})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		render.JSON(w, r, render.M{"message": MsgInternalServerError})
+		return
+	}
+
+	response := dto.ToOrdersResponse(orders)
+
+	w.WriteHeader(http.StatusOK)
+	render.JSON(w, r, response)
+}
+
 func (h *Handler) balance(w http.ResponseWriter, r *http.Request) {
 	_, claims, _ := jwtauth.FromContext(r.Context())
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("protected route: %v", claims)))
+	_, _ = w.Write([]byte(fmt.Sprintf("protected route: %v", claims)))
 }

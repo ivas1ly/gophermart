@@ -1,12 +1,5 @@
 package repository
 
-import (
-	"context"
-
-	"github.com/ivas1ly/gophermart/internal/entity"
+const (
+	DefaultEntityCap = 100
 )
-
-type UserRepository interface {
-	Create(ctx context.Context, id, username, hash string) (*entity.User, error)
-	Find(ctx context.Context, username string) (*entity.User, error)
-}

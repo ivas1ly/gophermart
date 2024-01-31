@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS users(
   id uuid PRIMARY KEY,
-  username VARCHAR(256) UNIQUE NOT NULL,
+  username VARCHAR(255) UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
@@ -10,9 +10,25 @@ CREATE TABLE IF NOT EXISTS users(
 );
 
 CREATE INDEX IF NOT EXISTS users_username_idx ON users (username);
+
+CREATE TABLE IF NOT EXISTS orders(
+  id uuid PRIMARY KEY,
+  user_id uuid NOT NULL,
+  number TEXT UNIQUE NOT NULL,
+  status VARCHAR(255) NOT NULL,
+  accrual BIGINT NOT NULL CHECK (accrual >= 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
+  deleted_at TIMESTAMPTZ,
+  CONSTRAINT fk_users FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+CREATE INDEX IF NOT EXISTS orders_user_id_idx ON orders (user_id);
+CREATE INDEX IF NOT EXISTS orders_number_idx ON orders (number);
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
+DROP TABLE orders;
 DROP TABLE users;
 -- +goose StatementEnd
