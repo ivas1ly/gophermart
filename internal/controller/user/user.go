@@ -98,7 +98,7 @@ func (h *Handler) register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dto.ToUserFromService(user)
+	response := dto.ToUserResponse(user)
 
 	authToken, err := jwt.NewToken(jwt.SigningKey, user.ID)
 	if err != nil {
@@ -154,7 +154,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dto.ToUserFromService(user)
+	response := dto.ToUserResponse(user)
 
 	authToken, err := jwt.NewToken(jwt.SigningKey, user.ID)
 	if err != nil {

@@ -18,7 +18,7 @@ type UserRequest struct {
 	Password string `json:"password" validate:"required,gt=8,lte=1000"`
 }
 
-func ToUserFromService(user *entity.User) *UserResponse {
+func ToUserResponse(user *entity.User) *UserResponse {
 	return &UserResponse{
 		ID:        user.ID,
 		Username:  user.Username,
