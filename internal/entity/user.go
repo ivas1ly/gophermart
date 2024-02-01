@@ -10,3 +10,9 @@ type User struct {
 	Username  string
 	Hash      string
 }
+
+type UserBalance struct {
+	ID        string
+	Balance   int64
+	Withdrawn int64
+}

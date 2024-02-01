@@ -3,6 +3,8 @@ package dto
 import (
 	"time"
 
+	"github.com/shopspring/decimal"
+
 	"github.com/ivas1ly/gophermart/internal/entity"
 )
 
@@ -24,5 +26,24 @@ func ToUserResponse(user *entity.User) *UserResponse {
 		Username:  user.Username,
 		CreatedAt: user.CreatedAt.Format(time.RFC3339),
 		UpdatedAt: user.UpdatedAt.Format(time.RFC3339),
+	}
+}
+
+type BalanceResponse struct {
+	Balance   decimal.Decimal `json:"current"`
+	Withdrawn decimal.Decimal `json:"withdrawn"`
+}
+
+func ToUserBalanceResponse(userBalance *entity.UserBalance) *BalanceResponse {
+	decimal.MarshalJSONWithoutQuotes = true
+
+	divModValue := decimal.NewFromInt(DecimalPartDivMod)
+
+	decimalBalance := decimal.NewFromInt(userBalance.Balance).Div(divModValue)
+	decimalWithdrawn := decimal.NewFromInt(userBalance.Withdrawn).Div(divModValue)
+
+	return &BalanceResponse{
+		Balance:   decimalBalance,
+		Withdrawn: decimalWithdrawn,
 	}
 }

@@ -32,3 +32,17 @@ func ToUserFromRepo(user *User) *entity.User {
 		DeletedAt: deletedAt,
 	}
 }
+
+type UserBalance struct {
+	ID        string
+	Balance   int64
+	Withdrawn int64
+}
+
+func ToUserBalanceFromRepo(userBalance *UserBalance) *entity.UserBalance {
+	return &entity.UserBalance{
+		ID:        userBalance.ID,
+		Balance:   userBalance.Balance,
+		Withdrawn: userBalance.Withdrawn,
+	}
+}

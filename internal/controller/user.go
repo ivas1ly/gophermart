@@ -36,6 +36,7 @@ type UserService interface {
 	Login(ctx context.Context, username, password string) (*entity.User, error)
 	NewOrder(ctx context.Context, userID, orderNumber string) (*entity.Order, error)
 	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
+	GetCurrentBalance(ctx context.Context, userID string) (*entity.UserBalance, error)
 }
 
 type Handler struct {
@@ -68,7 +69,7 @@ func (h *Handler) Register(router *chi.Mux) {
 
 			r.Post("/orders", h.order)
 			r.Get("/orders", h.orders)
-			r.Post("/balance", h.balance)
+			r.Get("/balance", h.balance)
 		})
 	})
 }
@@ -256,8 +257,21 @@ func (h *Handler) orders(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) balance(w http.ResponseWriter, r *http.Request) {
-	_, claims, _ := jwtauth.FromContext(r.Context())
+	w.Header().Set("Content-Type", "application/json")
+
+	token, _, _ := jwtauth.FromContext(r.Context())
+
+	userID := token.Subject()
+
+	currentBalance, err := h.userService.GetCurrentBalance(r.Context(), userID)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		render.JSON(w, r, render.M{"message": MsgInternalServerError})
+		return
+	}
+
+	response := dto.ToUserBalanceResponse(currentBalance)
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(fmt.Sprintf("protected route: %v", claims)))
+	render.JSON(w, r, response)
 }

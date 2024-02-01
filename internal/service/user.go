@@ -16,6 +16,7 @@ type UserRepository interface {
 	Find(ctx context.Context, username string) (*entity.User, error)
 	NewOrder(ctx context.Context, orderID, userID, orderNumber string) (*entity.Order, error)
 	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
+	GetUserBalance(ctx context.Context, userID string) (*entity.UserBalance, error)
 }
 
 type UserService interface {
@@ -23,6 +24,7 @@ type UserService interface {
 	Login(ctx context.Context, username, password string) (*entity.User, error)
 	NewOrder(ctx context.Context, userID, orderNumber string) (*entity.Order, error)
 	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
+	GetCurrentBalance(ctx context.Context, userID string) (*entity.UserBalance, error)
 }
 
 type Service struct {
@@ -100,4 +102,13 @@ func (s *Service) GetOrders(ctx context.Context, userID string) ([]entity.Order,
 	}
 
 	return orders, nil
+}
+
+func (s *Service) GetCurrentBalance(ctx context.Context, userID string) (*entity.UserBalance, error) {
+	currentBalance, err := s.userRepository.GetUserBalance(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return currentBalance, nil
 }

@@ -20,6 +20,7 @@ type UserRepository interface {
 	Find(ctx context.Context, username string) (*entity.User, error)
 	NewOrder(ctx context.Context, orderID, userID, orderNumber string) (*entity.Order, error)
 	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
+	GetUserBalance(ctx context.Context, userID string) (*entity.UserBalance, error)
 }
 
 type Repository struct {
@@ -161,7 +162,7 @@ func (r *Repository) NewOrder(ctx context.Context, orderID, userID, number strin
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return nil, err
 	}
-	if order != nil && !errors.Is(err, pgx.ErrNoRows) {
+	if !errors.Is(err, pgx.ErrNoRows) {
 		return repoEntity.ToOrderFromRepo(order), entity.ErrOrderUniqueViolation
 	}
 
@@ -248,4 +249,35 @@ func (r *Repository) GetOrders(ctx context.Context, userID string) ([]entity.Ord
 	}
 
 	return repoEntity.ToOrdersFromRepo(orders), nil
+}
+
+func (r *Repository) GetUserBalance(ctx context.Context, userID string) (*entity.UserBalance, error) {
+	userBalance := &repoEntity.UserBalance{}
+
+	query := r.db.Builder.
+		Select("users.id, users.current_balance, SUM(withdrawals.withdrawn)").
+		From("users").
+		LeftJoin("withdrawals ON withdrawals.user_id = users.id").
+		Where(sq.Eq{
+			"users.id": userID,
+		}).
+		GroupBy("users.id")
+
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	row := r.db.Pool.QueryRow(ctx, sql, args...)
+
+	err = row.Scan(
+		&userBalance.ID,
+		&userBalance.Balance,
+		&userBalance.Withdrawn,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return repoEntity.ToUserBalanceFromRepo(userBalance), nil
 }

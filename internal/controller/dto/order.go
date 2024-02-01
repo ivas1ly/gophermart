@@ -50,10 +50,7 @@ func ToOrdersResponse(orders []entity.Order) []OrdersResponse {
 		}
 
 		if order.Status == entity.StatusProcessed.String() {
-			div := decimal.NewFromInt(accrual).Div(divModValue)
-			mod := decimal.NewFromInt(accrual).Mod(divModValue)
-			decimalAccrual := div.Add(mod)
-
+			decimalAccrual := decimal.NewFromInt(accrual).Div(divModValue)
 			response.Accrual = &decimalAccrual
 		}
 
