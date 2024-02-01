@@ -17,7 +17,7 @@ var SigningKey []byte
 func NewToken(key []byte, id string) (string, error) {
 	tokenID, err := uuid.NewV7()
 	if err != nil {
-		return "", fmt.Errorf("jwt: can't get new uuidv7")
+		return "", fmt.Errorf("jwt can't get new uuid v7: %w", err)
 	}
 
 	claims := jwt.RegisteredClaims{
@@ -33,7 +33,7 @@ func NewToken(key []byte, id string) (string, error) {
 
 	ss, err := token.SignedString(key)
 	if err != nil {
-		return "", fmt.Errorf("jwt: can't sign string")
+		return "", fmt.Errorf("jwt can't sign string: %w", err)
 	}
 
 	return ss, nil
