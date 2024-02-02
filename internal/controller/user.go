@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
+	"github.com/shopspring/decimal"
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/gophermart/internal/controller/dto"
@@ -25,10 +26,11 @@ const (
 	AuthorizationSchema = "Bearer"
 	AuthorizationHeader = "Authorization"
 
-	MsgEmptyBody           = "empty request body"
-	MsgCantParseBody       = "can't parse request body"
-	MsgInvalidRequest      = "invalid request format"
-	MsgInternalServerError = "internal server error"
+	MsgEmptyBody            = "empty request body"
+	MsgCantParseBody        = "can't parse request body"
+	MsgInvalidRequest       = "invalid request format"
+	MsgInternalServerError  = "internal server error"
+	MsgIncorrectOrderNumber = "incorrect order number format"
 )
 
 type UserService interface {
@@ -37,6 +39,7 @@ type UserService interface {
 	NewOrder(ctx context.Context, userID, orderNumber string) (*entity.Order, error)
 	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
 	GetCurrentBalance(ctx context.Context, userID string) (*entity.UserBalance, error)
+	NewWithdrawal(ctx context.Context, userID, orderNumber string, sum int64) error
 }
 
 type Handler struct {
@@ -69,7 +72,11 @@ func (h *Handler) Register(router *chi.Mux) {
 
 			r.Post("/orders", h.order)
 			r.Get("/orders", h.orders)
-			r.Get("/balance", h.balance)
+
+			r.Route("/balance", func(r chi.Router) {
+				r.Get("/", h.balance)
+				r.Post("/withdraw", h.withdraw)
+			})
 		})
 	})
 }
@@ -204,7 +211,7 @@ func (h *Handler) order(w http.ResponseWriter, r *http.Request) {
 	ok := lunh.CheckNumber(orderNumber)
 	if !ok {
 		w.WriteHeader(http.StatusUnprocessableEntity)
-		render.JSON(w, r, render.M{"message": "incorrect order number format"})
+		render.JSON(w, r, render.M{"message": MsgIncorrectOrderNumber})
 		return
 	}
 
@@ -274,4 +281,67 @@ func (h *Handler) balance(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	render.JSON(w, r, response)
+}
+
+func (h *Handler) withdraw(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	token, _, _ := jwtauth.FromContext(r.Context())
+
+	userID := token.Subject()
+
+	var wr dto.WithdrawRequest
+	defer r.Body.Close()
+
+	err := json.NewDecoder(r.Body).Decode(&wr)
+	if errors.Is(err, io.EOF) {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": MsgEmptyBody})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": MsgCantParseBody})
+		return
+	}
+
+	err = h.validate.Struct(wr)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": MsgInvalidRequest})
+		return
+	}
+
+	okOrder := lunh.CheckNumber(strings.TrimSpace(wr.Order))
+	if !okOrder {
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		render.JSON(w, r, render.M{"message": MsgIncorrectOrderNumber})
+		return
+	}
+
+	okSum := wr.Sum.GreaterThanOrEqual(decimal.NewFromInt(1).Div(decimal.NewFromInt(dto.DecimalPartDiv)))
+	if !okSum {
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, render.M{"message": "the amount to be withdrawn is less than the minimum amount"})
+		return
+	}
+
+	intSum := wr.Sum.Mul(decimal.NewFromInt(dto.DecimalPartDiv)).IntPart()
+
+	err = h.userService.NewWithdrawal(r.Context(), userID, wr.Order, intSum)
+	if errors.Is(err, entity.ErrNotEnoughPointsToWithraw) {
+		w.WriteHeader(http.StatusPaymentRequired)
+		render.JSON(w, r, render.M{"message": entity.ErrNotEnoughPointsToWithraw.Error()})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		render.JSON(w, r, render.M{"message": MsgInternalServerError})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	render.JSON(w, r, render.M{
+		"message": fmt.Sprintf("%s loyalty points are withdrawn for order %s", wr.Sum, wr.Order),
+	})
 }

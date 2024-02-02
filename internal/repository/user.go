@@ -21,6 +21,7 @@ type UserRepository interface {
 	NewOrder(ctx context.Context, orderID, userID, orderNumber string) (*entity.Order, error)
 	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
 	GetUserBalance(ctx context.Context, userID string) (*entity.UserBalance, error)
+	NewWithdrawal(ctx context.Context, userID, withdrawalID, orderNumber string, sum int64) error
 }
 
 type Repository struct {
@@ -280,4 +281,64 @@ func (r *Repository) GetUserBalance(ctx context.Context, userID string) (*entity
 	}
 
 	return repoEntity.ToUserBalanceFromRepo(userBalance), nil
+}
+
+func (r *Repository) NewWithdrawal(ctx context.Context, userID, withdrawalID, orderNumber string,
+	sum int64) error {
+	tx, err := r.db.Pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func(tx pgx.Tx) {
+		err = tx.Rollback(ctx)
+		if errors.Is(err, pgx.ErrTxClosed) {
+			return
+		}
+	}(tx)
+
+	queryUpdateBalance := r.db.Builder.
+		Update("users").
+		SetMap(sq.Eq{
+			"current_balance": sq.Expr("current_balance - ?", sum),
+		}).
+		Where(sq.Eq{
+			"id": userID,
+		})
+
+	sql, args, err := queryUpdateBalance.ToSql()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx, sql, args...)
+
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.CheckViolation {
+			return entity.ErrNotEnoughPointsToWithraw
+		}
+		return err
+	}
+
+	queryNewWithdrawal := r.db.Builder.
+		Insert("withdrawals").
+		Columns("id, user_id, order_number, withdrawn").
+		Values(withdrawalID, userID, orderNumber, sum)
+
+	sql, args, err = queryNewWithdrawal.ToSql()
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx, sql, args...)
+	if err != nil {
+		return err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

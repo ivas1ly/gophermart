@@ -17,6 +17,7 @@ type UserRepository interface {
 	NewOrder(ctx context.Context, orderID, userID, orderNumber string) (*entity.Order, error)
 	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
 	GetUserBalance(ctx context.Context, userID string) (*entity.UserBalance, error)
+	NewWithdrawal(ctx context.Context, userID, withdrawalID, orderNumber string, sum int64) error
 }
 
 type UserService interface {
@@ -25,6 +26,7 @@ type UserService interface {
 	NewOrder(ctx context.Context, userID, orderNumber string) (*entity.Order, error)
 	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
 	GetCurrentBalance(ctx context.Context, userID string) (*entity.UserBalance, error)
+	NewWithdrawal(ctx context.Context, userID, orderNumber string, sum int64) error
 }
 
 type Service struct {
@@ -111,4 +113,18 @@ func (s *Service) GetCurrentBalance(ctx context.Context, userID string) (*entity
 	}
 
 	return currentBalance, nil
+}
+
+func (s *Service) NewWithdrawal(ctx context.Context, userID, orderNumber string, sum int64) error {
+	withdrawalUUID, err := uuid.NewV7()
+	if err != nil {
+		return err
+	}
+
+	err = s.userRepository.NewWithdrawal(ctx, userID, withdrawalUUID.String(), orderNumber, sum)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

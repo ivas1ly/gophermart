@@ -11,4 +11,6 @@ var (
 	ErrUploadedByThisUser    = errors.New("already uploaded by this user")
 	ErrUploadedByAnotherUser = errors.New("already uploaded by another user")
 	ErrNoOrdersFound         = errors.New("no orders found")
+
+	ErrNotEnoughPointsToWithraw = errors.New("not enough points to withdraw")
 )

@@ -24,3 +24,8 @@ func ToUserBalanceResponse(userBalance *entity.UserBalance) *BalanceResponse {
 		Withdrawn: decimalWithdrawn,
 	}
 }
+
+type WithdrawRequest struct {
+	Order string          `json:"order" validate:"required,gte=4,lte=255"`
+	Sum   decimal.Decimal `json:"sum" validate:"required"`
+}
