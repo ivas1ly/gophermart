@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users(
   id uuid PRIMARY KEY,
   username VARCHAR(255) UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
-  current_balance BIGINT NOT NULL CHECK (accrual >= 0) DEFAULT 0,
+  current_balance BIGINT NOT NULL CHECK (current_balance >= 0) DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
   deleted_at TIMESTAMPTZ
