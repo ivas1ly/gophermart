@@ -14,7 +14,7 @@ type BalanceResponse struct {
 func ToUserBalanceResponse(userBalance *entity.UserBalance) *BalanceResponse {
 	decimal.MarshalJSONWithoutQuotes = true
 
-	divValue := decimal.NewFromInt(DecimalPartDivMod)
+	divValue := decimal.NewFromInt(DecimalPartDiv)
 
 	decimalBalance := decimal.NewFromInt(userBalance.Balance).Div(divValue)
 	decimalWithdrawn := decimal.NewFromInt(userBalance.Withdrawn).Div(divValue)
