@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	DecimalPartDivMod = 100
+	DecimalPartDiv = 100
 )
 
 type OrderResponse struct {
@@ -36,7 +36,7 @@ func ToOrdersResponse(orders []entity.Order) []OrdersResponse {
 
 	decimal.MarshalJSONWithoutQuotes = true
 
-	divModValue := decimal.NewFromInt(DecimalPartDivMod)
+	divValue := decimal.NewFromInt(DecimalPartDiv)
 
 	for _, order := range orders {
 		accrual := order.Accrual
@@ -50,7 +50,7 @@ func ToOrdersResponse(orders []entity.Order) []OrdersResponse {
 		}
 
 		if order.Status == entity.StatusProcessed.String() {
-			decimalAccrual := decimal.NewFromInt(accrual).Div(divModValue)
+			decimalAccrual := decimal.NewFromInt(accrual).Div(divValue)
 			response.Accrual = &decimalAccrual
 		}
 
