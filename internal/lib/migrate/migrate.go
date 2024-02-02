@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ivas1ly/gophermart/migrations"
-	"go.uber.org/zap"
-
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
+	"go.uber.org/zap"
+
+	"github.com/ivas1ly/gophermart/migrations"
 )
 
 func Run(ctx context.Context, pool *pgxpool.Pool) error {
