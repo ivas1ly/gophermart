@@ -14,18 +14,23 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/gophermart/internal/config"
+	"github.com/ivas1ly/gophermart/internal/lib/client"
 	"github.com/ivas1ly/gophermart/internal/lib/logger"
 	"github.com/ivas1ly/gophermart/internal/lib/migrate"
 	"github.com/ivas1ly/gophermart/internal/lib/storage/postgres"
 	"github.com/ivas1ly/gophermart/internal/middleware/decompress"
 	"github.com/ivas1ly/gophermart/internal/middleware/reqlogger"
+	"github.com/ivas1ly/gophermart/internal/repository"
+	"github.com/ivas1ly/gophermart/internal/service"
 	"github.com/ivas1ly/gophermart/internal/utils/jwt"
+	"github.com/ivas1ly/gophermart/internal/worker"
 )
 
 type App struct {
 	log    *zap.Logger
 	router *chi.Mux
 	db     *postgres.DB
+	worker *worker.Worker
 	cfg    config.Config
 }
 
@@ -71,6 +76,11 @@ func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
 	usp.UserRepository(db)
 	usp.UserHandler(validate).Register(a.router)
 
+	workerService := service.NewWorkerService(repository.NewRepository(db, a.log), a.log)
+	httpClient := client.NewClient(cfg.ClientTimeout, a.log)
+
+	a.worker = worker.NewWorker(httpClient, workerService, cfg.AccrualSystemAddress, cfg.WorkerPollInterval, a.log)
+
 	return a, nil
 }
 
@@ -84,6 +94,8 @@ func (a *App) Run(ctx context.Context) error {
 
 	notifyCtx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
 	defer stop()
+
+	go a.worker.Run(ctx)
 
 	if err := a.startHTTP(notifyCtx); err != nil {
 		a.log.Error("unexpected server error", zap.Error(err))

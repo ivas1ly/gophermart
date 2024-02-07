@@ -23,6 +23,8 @@ const (
 	defaultWriteTimeout         = 10 * time.Second
 	defaultIdleTimeout          = 1 * time.Minute
 	defaultShutdownTimeout      = 5 * time.Second
+	defaultWorkerPollInterval   = 15 * time.Second
+	defaultClientTimeout        = 5 * time.Second
 )
 
 var (
@@ -39,6 +41,7 @@ type App struct {
 	LogLevel             string
 	AccrualSystemAddress string
 	SigningKey           []byte
+	WorkerPollInterval   time.Duration
 }
 
 type DB struct {
@@ -55,6 +58,7 @@ type HTTP struct {
 	WriteTimeout      time.Duration
 	IdleTimeout       time.Duration
 	ShutdownTimeout   time.Duration
+	ClientTimeout     time.Duration
 }
 
 func New() Config {
@@ -62,8 +66,9 @@ func New() Config {
 
 	cfg := Config{
 		App: App{
-			LogLevel:   defaultLogLevel,
-			SigningKey: defaultSigningKey,
+			LogLevel:           defaultLogLevel,
+			SigningKey:         defaultSigningKey,
+			WorkerPollInterval: defaultWorkerPollInterval,
 		},
 		HTTP: HTTP{
 			CompressLevel:     defaultCompressLevel,
@@ -72,6 +77,7 @@ func New() Config {
 			WriteTimeout:      defaultWriteTimeout,
 			IdleTimeout:       defaultIdleTimeout,
 			ShutdownTimeout:   defaultShutdownTimeout,
+			ClientTimeout:     defaultClientTimeout,
 		},
 		DB: DB{
 			DatabaseConnTimeout:  defaultDatabaseConnTimeout,

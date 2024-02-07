@@ -14,4 +14,7 @@ var (
 
 	ErrNotEnoughPointsToWithdraw = errors.New("not enough points to withdraw")
 	ErrNoWithdrawalsFound        = errors.New("no withdrawals found")
+
+	ErrCanNotUpdateOrder       = errors.New("can't update order")
+	ErrCanNotUpdateUserBalance = errors.New("can't update user balance")
 )
