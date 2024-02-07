@@ -38,8 +38,9 @@ type UserService interface {
 	Login(ctx context.Context, username, password string) (*entity.User, error)
 	NewOrder(ctx context.Context, userID, orderNumber string) (*entity.Order, error)
 	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
-	GetCurrentBalance(ctx context.Context, userID string) (*entity.UserBalance, error)
+	GetCurrentBalance(ctx context.Context, userID string) (*entity.Balance, error)
 	NewWithdrawal(ctx context.Context, userID, orderNumber string, sum int64) error
+	GetWithdrawals(ctx context.Context, userID string) ([]entity.Withdraw, error)
 }
 
 type Handler struct {
@@ -77,6 +78,8 @@ func (h *Handler) Register(router *chi.Mux) {
 				r.Get("/", h.balance)
 				r.Post("/withdraw", h.withdraw)
 			})
+
+			r.Get("/withdrawals", h.withdrawals)
 		})
 	})
 }
@@ -329,9 +332,9 @@ func (h *Handler) withdraw(w http.ResponseWriter, r *http.Request) {
 	intSum := wr.Sum.Mul(decimal.NewFromInt(dto.DecimalPartDiv)).IntPart()
 
 	err = h.userService.NewWithdrawal(r.Context(), userID, wr.Order, intSum)
-	if errors.Is(err, entity.ErrNotEnoughPointsToWithraw) {
+	if errors.Is(err, entity.ErrNotEnoughPointsToWithdraw) {
 		w.WriteHeader(http.StatusPaymentRequired)
-		render.JSON(w, r, render.M{"message": entity.ErrNotEnoughPointsToWithraw.Error()})
+		render.JSON(w, r, render.M{"message": entity.ErrNotEnoughPointsToWithdraw.Error()})
 		return
 	}
 	if err != nil {
@@ -344,4 +347,29 @@ func (h *Handler) withdraw(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, render.M{
 		"message": fmt.Sprintf("%s loyalty points are withdrawn for order %s", wr.Sum, wr.Order),
 	})
+}
+
+func (h *Handler) withdrawals(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	token, _, _ := jwtauth.FromContext(r.Context())
+
+	userID := token.Subject()
+
+	withdrawals, err := h.userService.GetWithdrawals(r.Context(), userID)
+	if errors.Is(err, entity.ErrNoWithdrawalsFound) {
+		w.WriteHeader(http.StatusNoContent)
+		render.JSON(w, r, render.M{"message": MsgInternalServerError})
+		return
+	}
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		render.JSON(w, r, render.M{"message": MsgInternalServerError})
+		return
+	}
+
+	response := dto.ToWithdrawalsResponse(withdrawals)
+
+	w.WriteHeader(http.StatusOK)
+	render.JSON(w, r, response)
 }

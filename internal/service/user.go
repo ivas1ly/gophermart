@@ -11,37 +11,29 @@ import (
 	"github.com/ivas1ly/gophermart/internal/utils/argon2id"
 )
 
-type UserRepository interface {
+type Repository interface {
 	Create(ctx context.Context, id, username, hash string) (*entity.User, error)
 	Find(ctx context.Context, username string) (*entity.User, error)
 	NewOrder(ctx context.Context, orderID, userID, orderNumber string) (*entity.Order, error)
 	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
-	GetUserBalance(ctx context.Context, userID string) (*entity.UserBalance, error)
+	GetUserBalance(ctx context.Context, userID string) (*entity.Balance, error)
 	NewWithdrawal(ctx context.Context, userID, withdrawalID, orderNumber string, sum int64) error
+	GetWithdrawals(ctx context.Context, userID string) ([]entity.Withdraw, error)
 }
 
-type UserService interface {
-	Register(ctx context.Context, username, password string) (*entity.User, error)
-	Login(ctx context.Context, username, password string) (*entity.User, error)
-	NewOrder(ctx context.Context, userID, orderNumber string) (*entity.Order, error)
-	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
-	GetCurrentBalance(ctx context.Context, userID string) (*entity.UserBalance, error)
-	NewWithdrawal(ctx context.Context, userID, orderNumber string, sum int64) error
-}
-
-type Service struct {
-	userRepository UserRepository
+type UserService struct {
+	userRepository Repository
 	log            *zap.Logger
 }
 
-func NewService(userRepository UserRepository, log *zap.Logger) *Service {
-	return &Service{
+func NewUserService(userRepository Repository, log *zap.Logger) *UserService {
+	return &UserService{
 		userRepository: userRepository,
 		log:            log,
 	}
 }
 
-func (s *Service) Register(ctx context.Context, username, password string) (*entity.User, error) {
+func (s *UserService) Register(ctx context.Context, username, password string) (*entity.User, error) {
 	userUUID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -60,7 +52,7 @@ func (s *Service) Register(ctx context.Context, username, password string) (*ent
 	return user, nil
 }
 
-func (s *Service) Login(ctx context.Context, username, password string) (*entity.User, error) {
+func (s *UserService) Login(ctx context.Context, username, password string) (*entity.User, error) {
 	user, err := s.userRepository.Find(ctx, username)
 	if err != nil {
 		return nil, err
@@ -77,7 +69,7 @@ func (s *Service) Login(ctx context.Context, username, password string) (*entity
 	return user, nil
 }
 
-func (s *Service) NewOrder(ctx context.Context, userID, orderNumber string) (*entity.Order, error) {
+func (s *UserService) NewOrder(ctx context.Context, userID, orderNumber string) (*entity.Order, error) {
 	orderUUID, err := uuid.NewV7()
 	if err != nil {
 		return nil, err
@@ -97,7 +89,7 @@ func (s *Service) NewOrder(ctx context.Context, userID, orderNumber string) (*en
 	return order, nil
 }
 
-func (s *Service) GetOrders(ctx context.Context, userID string) ([]entity.Order, error) {
+func (s *UserService) GetOrders(ctx context.Context, userID string) ([]entity.Order, error) {
 	orders, err := s.userRepository.GetOrders(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -106,7 +98,7 @@ func (s *Service) GetOrders(ctx context.Context, userID string) ([]entity.Order,
 	return orders, nil
 }
 
-func (s *Service) GetCurrentBalance(ctx context.Context, userID string) (*entity.UserBalance, error) {
+func (s *UserService) GetCurrentBalance(ctx context.Context, userID string) (*entity.Balance, error) {
 	currentBalance, err := s.userRepository.GetUserBalance(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -115,7 +107,7 @@ func (s *Service) GetCurrentBalance(ctx context.Context, userID string) (*entity
 	return currentBalance, nil
 }
 
-func (s *Service) NewWithdrawal(ctx context.Context, userID, orderNumber string, sum int64) error {
+func (s *UserService) NewWithdrawal(ctx context.Context, userID, orderNumber string, sum int64) error {
 	withdrawalUUID, err := uuid.NewV7()
 	if err != nil {
 		return err
@@ -127,4 +119,13 @@ func (s *Service) NewWithdrawal(ctx context.Context, userID, orderNumber string,
 	}
 
 	return nil
+}
+
+func (s *UserService) GetWithdrawals(ctx context.Context, userID string) ([]entity.Withdraw, error) {
+	withdrawals, err := s.userRepository.GetWithdrawals(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return withdrawals, nil
 }

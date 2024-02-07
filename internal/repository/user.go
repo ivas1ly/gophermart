@@ -252,11 +252,11 @@ func (r *Repository) GetOrders(ctx context.Context, userID string) ([]entity.Ord
 	return repoEntity.ToOrdersFromRepo(orders), nil
 }
 
-func (r *Repository) GetUserBalance(ctx context.Context, userID string) (*entity.UserBalance, error) {
-	userBalance := &repoEntity.UserBalance{}
+func (r *Repository) GetUserBalance(ctx context.Context, userID string) (*entity.Balance, error) {
+	userBalance := &repoEntity.Balance{}
 
 	query := r.db.Builder.
-		Select("users.id, users.current_balance, SUM(withdrawals.withdrawn)").
+		Select("users.id, users.current_balance, COALESCE(SUM(withdrawals.withdrawn), 0)").
 		From("users").
 		LeftJoin("withdrawals ON withdrawals.user_id = users.id").
 		Where(sq.Eq{
@@ -315,7 +315,7 @@ func (r *Repository) NewWithdrawal(ctx context.Context, userID, withdrawalID, or
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.CheckViolation {
-			return entity.ErrNotEnoughPointsToWithraw
+			return entity.ErrNotEnoughPointsToWithdraw
 		}
 		return err
 	}
@@ -341,4 +341,52 @@ func (r *Repository) NewWithdrawal(ctx context.Context, userID, withdrawalID, or
 	}
 
 	return nil
+}
+
+func (r *Repository) GetWithdrawals(ctx context.Context, userID string) ([]entity.Withdraw, error) {
+	query := r.db.Builder.
+		Select("id, user_id, order_number, withdrawn, created_at, updated_at, deleted_at").
+		From("withdrawals").
+		Where(sq.Eq{
+			"user_id": userID,
+		}).
+		OrderBy("created_at ASC").
+		Limit(DefaultEntityCap)
+
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := r.db.Pool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	withdrawals := make([]repoEntity.Withdraw, 0, DefaultEntityCap)
+
+	for rows.Next() {
+		withdraw := repoEntity.Withdraw{}
+
+		err = rows.Scan(
+			&withdraw.ID,
+			&withdraw.UserID,
+			&withdraw.OrderNumber,
+			&withdraw.Withdrawn,
+			&withdraw.CreatedAt,
+			&withdraw.UpdatedAt,
+			&withdraw.DeletedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		withdrawals = append(withdrawals, withdraw)
+	}
+	if len(withdrawals) == 0 {
+		return nil, entity.ErrNoWithdrawalsFound
+	}
+
+	return repoEntity.ToWithdrawalsFromRepo(withdrawals), nil
 }
