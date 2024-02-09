@@ -21,7 +21,7 @@ func TestToken(t *testing.T) {
 		assert.Equal(t, len(strings.Split(signedToken, ".")), 3)
 
 		claims := jwt.MapClaims{}
-		token, err := jwt.ParseWithClaims(signedToken, claims, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(signedToken, claims, func(_ *jwt.Token) (interface{}, error) {
 			return SigningKey, nil
 		})
 		assert.NoError(t, err)
