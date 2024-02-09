@@ -16,13 +16,11 @@ type WorkerRepository interface {
 
 type WorkerService struct {
 	workerRepository WorkerRepository
-	log              *zap.Logger
 }
 
-func NewWorkerService(workerRepository WorkerRepository, log *zap.Logger) *WorkerService {
+func NewWorkerService(workerRepository WorkerRepository) *WorkerService {
 	return &WorkerService{
 		workerRepository: workerRepository,
-		log:              log,
 	}
 }
 
@@ -36,25 +34,25 @@ func (s *WorkerService) GetNewOrders(ctx context.Context) ([]entity.Order, error
 }
 
 func (s *WorkerService) UpdateOrders(ctx context.Context, orders ...entity.Order) error {
-	s.log.Info("updating order status and user balance")
+	zap.L().Info("updating order status and user balance")
 
 	for _, order := range orders {
 		err := s.workerRepository.UpdateOrderAndUserBalance(ctx, order)
 		if errors.Is(err, entity.ErrCanNotUpdateOrder) {
-			s.log.Warn("can't update order status", zap.Error(err))
+			zap.L().Warn("can't update order status", zap.Error(err))
 			continue
 		}
 		if errors.Is(err, entity.ErrCanNotUpdateUserBalance) {
-			s.log.Warn("can't update user balance", zap.Error(err))
+			zap.L().Warn("can't update user balance", zap.Error(err))
 			continue
 		}
 		if err != nil {
-			s.log.Warn("can't update order and user balance", zap.Error(err))
+			zap.L().Warn("can't update order and user balance", zap.Error(err))
 			continue
 		}
 	}
 
-	s.log.Info("order status and user balance updated")
+	zap.L().Info("order status and user balance updated")
 
 	return nil
 }

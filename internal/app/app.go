@@ -35,15 +35,18 @@ type App struct {
 }
 
 func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
+	log := logger.New(cfg.App.LogLevel, logger.NewDefaultLoggerConfig()).
+		With(zap.String("app", "gophermart"))
+	logger.SetGlobalLogger(log)
+
 	a := &App{
 		cfg: cfg,
-		log: logger.New(cfg.App.LogLevel, logger.NewDefaultLoggerConfig()).
-			With(zap.String("app", "gophermart")),
+		log: log,
 	}
 	jwt.SigningKey = cfg.SigningKey
 
 	a.log.Info("init the database pool")
-	db, err := postgres.New(ctx, cfg.DatabaseURI, cfg.DatabaseConnAttempts, cfg.DatabaseConnTimeout, a.log)
+	db, err := postgres.New(ctx, cfg.DatabaseURI, cfg.DatabaseConnAttempts, cfg.DatabaseConnTimeout)
 	if err != nil {
 		a.log.Error("can't create pgx pool", zap.Error(err))
 		return nil, err
@@ -76,7 +79,7 @@ func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
 	usp.UserRepository(db)
 	usp.UserHandler(validate).Register(a.router)
 
-	workerService := service.NewWorkerService(repository.NewRepository(db, a.log), a.log)
+	workerService := service.NewWorkerService(repository.NewRepository(db))
 	httpClient := client.NewClient(cfg.ClientTimeout, a.log)
 
 	a.worker = worker.NewWorker(httpClient, workerService, cfg.AccrualSystemAddress, cfg.WorkerPollInterval, a.log)

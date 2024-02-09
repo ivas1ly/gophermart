@@ -48,14 +48,14 @@ func newUserServiceProvider(log *zap.Logger) *userServiceProvider {
 
 func (s *userServiceProvider) UserRepository(db *postgres.DB) UserRepository {
 	if s.userRepository == nil {
-		s.userRepository = repository.NewRepository(db, s.log)
+		s.userRepository = repository.NewRepository(db)
 	}
 	return s.userRepository
 }
 
 func (s *userServiceProvider) UserService(ur UserRepository) UserService {
 	if s.userService == nil {
-		s.userService = service.NewUserService(ur, s.log)
+		s.userService = service.NewUserService(ur)
 	}
 	return s.userService
 }

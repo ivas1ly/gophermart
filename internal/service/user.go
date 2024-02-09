@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 
 	"github.com/ivas1ly/gophermart/internal/entity"
 	"github.com/ivas1ly/gophermart/internal/utils/argon2id"
@@ -23,13 +22,11 @@ type Repository interface {
 
 type UserService struct {
 	userRepository Repository
-	log            *zap.Logger
 }
 
-func NewUserService(userRepository Repository, log *zap.Logger) *UserService {
+func NewUserService(userRepository Repository) *UserService {
 	return &UserService{
 		userRepository: userRepository,
-		log:            log,
 	}
 }
 

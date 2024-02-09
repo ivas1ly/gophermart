@@ -17,14 +17,14 @@ type DB struct {
 	Builder squirrel.StatementBuilderType
 }
 
-func New(ctx context.Context, dsn string, attempts int, timeout time.Duration, log *zap.Logger) (*DB, error) {
+func New(ctx context.Context, dsn string, attempts int, timeout time.Duration) (*DB, error) {
 	cfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse config: %w", err)
 	}
 
 	cfg.ConnConfig.Tracer = &tracelog.TraceLog{
-		Logger:   zapadapter.NewLogger(log),
+		Logger:   zapadapter.NewLogger(zap.L()),
 		LogLevel: tracelog.LogLevelTrace,
 	}
 

@@ -19,14 +19,12 @@ import (
 const defaultWorkerEntities = 5
 
 type Repository struct {
-	db  *postgres.DB
-	log *zap.Logger
+	db *postgres.DB
 }
 
-func NewRepository(db *postgres.DB, log *zap.Logger) *Repository {
+func NewRepository(db *postgres.DB) *Repository {
 	return &Repository{
-		db:  db,
-		log: log,
+		db: db,
 	}
 }
 
@@ -130,7 +128,6 @@ func (r *Repository) NewOrder(ctx context.Context, orderID, userID, number strin
 		}
 	}(tx)
 
-	// how to optimize and simplify this check?
 	checkQuery := r.db.Builder.
 		Select("id, user_id, number, status, accrual, created_at, updated_at, deleted_at").
 		From("orders").
@@ -161,7 +158,7 @@ func (r *Repository) NewOrder(ctx context.Context, orderID, userID, number strin
 		return repoEntity.ToOrderFromRepo(order), entity.ErrOrderUniqueViolation
 	}
 
-	r.log.Info("no rows found, continue to add new order")
+	zap.L().Info("no rows found, continue to add new order")
 
 	query := r.db.Builder.
 		Insert("orders").

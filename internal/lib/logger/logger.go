@@ -37,8 +37,6 @@ func New(level string, cfg zap.Config) *zap.Logger {
 		}
 	}()
 
-	zap.ReplaceGlobals(logger)
-
 	return logger
 }
 
@@ -59,4 +57,8 @@ func NewDefaultLoggerConfig() zap.Config {
 	}
 
 	return loggerCfg
+}
+
+func SetGlobalLogger(log *zap.Logger) {
+	zap.ReplaceGlobals(log)
 }
