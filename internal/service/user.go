@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/ivas1ly/gophermart/internal/entity"
-	"github.com/ivas1ly/gophermart/internal/utils/argon2id"
+	"github.com/ivas1ly/gophermart/pkg/argon2id"
 )
 
 type Repository interface {

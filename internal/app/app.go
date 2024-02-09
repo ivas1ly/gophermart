@@ -22,8 +22,8 @@ import (
 	"github.com/ivas1ly/gophermart/internal/middleware/reqlogger"
 	"github.com/ivas1ly/gophermart/internal/repository"
 	"github.com/ivas1ly/gophermart/internal/service"
-	"github.com/ivas1ly/gophermart/internal/utils/jwt"
 	"github.com/ivas1ly/gophermart/internal/worker"
+	"github.com/ivas1ly/gophermart/pkg/jwt"
 )
 
 type App struct {

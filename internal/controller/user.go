@@ -18,8 +18,8 @@ import (
 
 	"github.com/ivas1ly/gophermart/internal/controller/dto"
 	"github.com/ivas1ly/gophermart/internal/entity"
-	"github.com/ivas1ly/gophermart/internal/utils/jwt"
-	"github.com/ivas1ly/gophermart/internal/utils/lunh"
+	"github.com/ivas1ly/gophermart/pkg/jwt"
+	"github.com/ivas1ly/gophermart/pkg/lunh"
 )
 
 const (
