@@ -3,25 +3,22 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 
+	"github.com/ivas1ly/gophermart/internal/api/router"
 	"github.com/ivas1ly/gophermart/internal/config"
 	"github.com/ivas1ly/gophermart/internal/lib/client"
 	"github.com/ivas1ly/gophermart/internal/lib/logger"
 	"github.com/ivas1ly/gophermart/internal/lib/migrate"
 	"github.com/ivas1ly/gophermart/internal/lib/storage/postgres"
-	"github.com/ivas1ly/gophermart/internal/middleware/decompress"
-	"github.com/ivas1ly/gophermart/internal/middleware/reqlogger"
-	"github.com/ivas1ly/gophermart/internal/repository"
-	"github.com/ivas1ly/gophermart/internal/service"
 	"github.com/ivas1ly/gophermart/internal/worker"
 	"github.com/ivas1ly/gophermart/pkg/jwt"
 )
@@ -30,7 +27,7 @@ type App struct {
 	log    *zap.Logger
 	router *chi.Mux
 	db     *postgres.DB
-	worker *worker.Worker
+	worker *worker.AccrualWorker
 	cfg    config.Config
 }
 
@@ -63,26 +60,18 @@ func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
 	}
 	a.log.Info("migrations up success")
 
-	a.log.Info("init new router")
-	a.router = chi.NewRouter()
-	a.router.Use(
-		reqlogger.New(a.log),
-		middleware.Recoverer,
-		middleware.Compress(cfg.CompressLevel),
-		decompress.New(a.log),
-	)
+	a.router = router.NewRouter(cfg.HTTP, a.log)
 
-	a.log.Info("init user service")
+	a.log.Info("init services")
+	serviceProvider := NewServiceProvider(db)
+	serviceProvider.RegisterServices()
+
 	validate := validator.New(validator.WithRequiredStructEnabled())
+	serviceProvider.RegisterHandlers(a.router, validate)
 
-	usp := newUserServiceProvider(a.log)
-	usp.UserRepository(db)
-	usp.UserHandler(validate).Register(a.router)
-
-	workerService := service.NewWorkerService(repository.NewRepository(db))
-	httpClient := client.NewClient(cfg.ClientTimeout, a.log)
-
-	a.worker = worker.NewWorker(httpClient, workerService, cfg.AccrualSystemAddress, cfg.WorkerPollInterval, a.log)
+	accrualClient := client.NewAccrualClient(cfg.AccrualSystemAddress, cfg.ClientTimeout, a.log)
+	a.worker = worker.NewAccrualWorker(accrualClient, serviceProvider.AccrualWorkerService,
+		cfg.WorkerPollInterval, a.log)
 
 	return a, nil
 }
@@ -117,6 +106,15 @@ func (a *App) startHTTP(ctx context.Context) error {
 		ReadHeaderTimeout: a.cfg.ReadHeaderTimeout,
 		WriteTimeout:      a.cfg.WriteTimeout,
 		IdleTimeout:       a.cfg.IdleTimeout,
+	}
+
+	err := chi.Walk(a.router, func(method string, route string, _ http.Handler,
+		middlewares ...func(http.Handler) http.Handler) error {
+		a.log.Debug(fmt.Sprintf("[%s]: '%s' has %d middlewares", method, route, len(middlewares)))
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	go func() {

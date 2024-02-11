@@ -23,7 +23,7 @@ const (
 	defaultWriteTimeout         = 10 * time.Second
 	defaultIdleTimeout          = 1 * time.Minute
 	defaultShutdownTimeout      = 5 * time.Second
-	defaultWorkerPollInterval   = 15 * time.Second
+	defaultWorkerPollInterval   = 10 * time.Second
 	defaultClientTimeout        = 5 * time.Second
 )
 
