@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -14,23 +15,23 @@ type AccrualClient interface {
 	GetOrderStatus(id string) (string, int64, error)
 }
 
-type AccrualService interface {
-	GetNewOrders(ctx context.Context) ([]entity.Order, error)
-	UpdateOrders(ctx context.Context, orders ...entity.Order) error
+type AccrualWorkerRepository interface {
+	GetOrdersToProcess(ctx context.Context) ([]entity.Order, error)
+	UpdateOrderAndUserBalance(ctx context.Context, order entity.Order) error
 }
 
 type AccrualWorker struct {
-	as           AccrualService
+	ar           AccrualWorkerRepository
 	client       AccrualClient
 	log          *zap.Logger
 	pollInterval time.Duration
 }
 
-func NewAccrualWorker(accrualClient AccrualClient, accrualService AccrualService,
+func NewAccrualWorker(accrualClient AccrualClient, accrualRepository AccrualWorkerRepository,
 	pollInterval time.Duration, log *zap.Logger) *AccrualWorker {
 	return &AccrualWorker{
 		client:       accrualClient,
-		as:           accrualService,
+		ar:           accrualRepository,
 		pollInterval: pollInterval,
 		log:          log.With(zap.String("worker", "accrual system")),
 	}
@@ -42,7 +43,7 @@ func (w *AccrualWorker) Run(ctx context.Context) {
 	inputCh, ticker := w.getNewOrders(ctx)
 	defer ticker.Stop()
 
-	w.updateOrder(ctx, w.getOrderAccrual(ctx, inputCh))
+	w.updateOrderStatus(ctx, w.getOrderAccrual(ctx, inputCh))
 
 	<-ctx.Done()
 }
@@ -66,7 +67,7 @@ func (w *AccrualWorker) getNewOrders(ctx context.Context) (chan []entity.Order, 
 				return
 			case <-updateTicker.C:
 				w.log.Info("trying to get new orders")
-				orders, err := w.as.GetNewOrders(ctx)
+				orders, err := w.ar.GetOrdersToProcess(ctx)
 				if err != nil {
 					w.log.Info("can't get new orders", zap.Error(err))
 					continue
@@ -133,7 +134,7 @@ func (w *AccrualWorker) getOrderAccrual(ctx context.Context, inputCh chan []enti
 	return result
 }
 
-func (w *AccrualWorker) updateOrder(ctx context.Context, inputCh chan []entity.Order) {
+func (w *AccrualWorker) updateOrderStatus(ctx context.Context, inputCh chan []entity.Order) {
 	w.log.Info("start update order status")
 
 	go func() {
@@ -149,13 +150,39 @@ func (w *AccrualWorker) updateOrder(ctx context.Context, inputCh chan []entity.O
 				}
 
 				w.log.Info("trying to update orders status")
-				err := w.as.UpdateOrders(ctx, orders...)
-				if err != nil {
-					w.log.Info("can't update orders, skip")
+				updated := w.updateOrders(ctx, orders...)
+				if updated == 0 {
+					w.log.Info("failed to update order status, skip", zap.Int("updated", updated))
 					continue
 				}
-				w.log.Info("all orders updated")
+				w.log.Info("orders updated")
 			}
 		}
 	}()
+}
+
+func (w *AccrualWorker) updateOrders(ctx context.Context, orders ...entity.Order) int {
+	zap.L().Info("updating order status and user balance")
+
+	var count int
+	for _, order := range orders {
+		err := w.ar.UpdateOrderAndUserBalance(ctx, order)
+		if errors.Is(err, entity.ErrCanNotUpdateOrder) {
+			w.log.Warn("can't update order status", zap.Error(err))
+			continue
+		}
+		if errors.Is(err, entity.ErrCanNotUpdateUserBalance) {
+			w.log.Warn("can't update user balance", zap.Error(err))
+			continue
+		}
+		if err != nil {
+			w.log.Warn("can't update order and user balance", zap.Error(err))
+			continue
+		}
+
+		w.log.Info("order and balance updated", zap.String("number", order.Number))
+		count++
+	}
+
+	return count
 }

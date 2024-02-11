@@ -19,6 +19,7 @@ import (
 	"github.com/ivas1ly/gophermart/internal/lib/logger"
 	"github.com/ivas1ly/gophermart/internal/lib/migrate"
 	"github.com/ivas1ly/gophermart/internal/lib/storage/postgres"
+	"github.com/ivas1ly/gophermart/internal/repository"
 	"github.com/ivas1ly/gophermart/internal/worker"
 	"github.com/ivas1ly/gophermart/pkg/jwt"
 )
@@ -70,7 +71,7 @@ func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
 	serviceProvider.RegisterHandlers(a.router, validate)
 
 	accrualClient := client.NewAccrualClient(cfg.AccrualSystemAddress, cfg.ClientTimeout, a.log)
-	a.worker = worker.NewAccrualWorker(accrualClient, serviceProvider.AccrualWorkerService,
+	a.worker = worker.NewAccrualWorker(accrualClient, repository.NewAccrualWorkerRepository(a.db),
 		cfg.WorkerPollInterval, a.log)
 
 	return a, nil

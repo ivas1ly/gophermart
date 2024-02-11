@@ -13,7 +13,6 @@ import (
 	"github.com/ivas1ly/gophermart/internal/lib/storage/postgres"
 	"github.com/ivas1ly/gophermart/internal/repository"
 	"github.com/ivas1ly/gophermart/internal/service"
-	workers "github.com/ivas1ly/gophermart/internal/service/worker"
 )
 
 type AuthService interface {
@@ -77,7 +76,6 @@ func (s *ServiceProvider) RegisterServices() {
 	s.NewOrderService()
 	s.NewAuthService()
 	s.NewBalanceService()
-	s.NewAccrualWorkerService()
 }
 
 func (s *ServiceProvider) RegisterHandlers(router *chi.Mux, validate *validator.Validate) *chi.Mux {
@@ -124,16 +122,4 @@ func (s *ServiceProvider) NewBalanceService() BalanceService {
 	}
 
 	return s.BalanceService
-}
-
-func (s *ServiceProvider) newAccrualWorkerRepository() AccrualWorkerRepository {
-	return repository.NewAccrualWorkerRepository(s.db)
-}
-
-func (s *ServiceProvider) NewAccrualWorkerService() AccrualWorkerService {
-	if s.AccrualWorkerService == nil {
-		s.AccrualWorkerService = workers.NewAccrualWorkerService(s.newAccrualWorkerRepository())
-	}
-
-	return s.AccrualWorkerService
 }
