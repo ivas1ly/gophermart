@@ -1,4 +1,4 @@
-package service
+package workers
 
 import (
 	"context"
@@ -9,22 +9,22 @@ import (
 	"github.com/ivas1ly/gophermart/internal/entity"
 )
 
-type WorkerRepository interface {
+type AccrualWorkerRepository interface {
 	GetOrdersToProcess(ctx context.Context) ([]entity.Order, error)
 	UpdateOrderAndUserBalance(ctx context.Context, order entity.Order) error
 }
 
-type WorkerService struct {
-	workerRepository WorkerRepository
+type AccrualWorkerService struct {
+	workerRepository AccrualWorkerRepository
 }
 
-func NewWorkerService(workerRepository WorkerRepository) *WorkerService {
-	return &WorkerService{
+func NewAccrualWorkerService(workerRepository AccrualWorkerRepository) *AccrualWorkerService {
+	return &AccrualWorkerService{
 		workerRepository: workerRepository,
 	}
 }
 
-func (s *WorkerService) GetNewOrders(ctx context.Context) ([]entity.Order, error) {
+func (s *AccrualWorkerService) GetNewOrders(ctx context.Context) ([]entity.Order, error) {
 	orders, err := s.workerRepository.GetOrdersToProcess(ctx)
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func (s *WorkerService) GetNewOrders(ctx context.Context) ([]entity.Order, error
 	return orders, nil
 }
 
-func (s *WorkerService) UpdateOrders(ctx context.Context, orders ...entity.Order) error {
+func (s *AccrualWorkerService) UpdateOrders(ctx context.Context, orders ...entity.Order) error {
 	zap.L().Info("updating order status and user balance")
 
 	for _, order := range orders {
