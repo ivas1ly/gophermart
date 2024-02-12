@@ -2,6 +2,10 @@ package entity
 
 import "time"
 
+const (
+	DecimalPartDiv = 100
+)
+
 type Balance struct {
 	ID        string
 	Balance   int64

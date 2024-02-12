@@ -8,7 +8,6 @@ import (
 	"github.com/go-chi/render"
 
 	"github.com/ivas1ly/gophermart/internal/api/controller"
-	"github.com/ivas1ly/gophermart/internal/api/controller/dto"
 	"github.com/ivas1ly/gophermart/internal/entity"
 )
 
@@ -31,7 +30,7 @@ func (oh *OrderHandler) orders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dto.ToOrdersResponse(orders)
+	response := ToOrdersResponse(orders)
 
 	w.WriteHeader(http.StatusOK)
 	render.JSON(w, r, response)

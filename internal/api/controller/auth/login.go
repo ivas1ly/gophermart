@@ -10,7 +10,6 @@ import (
 	"github.com/go-chi/render"
 
 	"github.com/ivas1ly/gophermart/internal/api/controller"
-	"github.com/ivas1ly/gophermart/internal/api/controller/dto"
 	"github.com/ivas1ly/gophermart/internal/entity"
 	"github.com/ivas1ly/gophermart/pkg/jwt"
 )
@@ -18,7 +17,7 @@ import (
 func (ah *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var ur dto.UserRequest
+	var ur UserRequest
 	defer r.Body.Close()
 
 	err := json.NewDecoder(r.Body).Decode(&ur)
@@ -57,7 +56,7 @@ func (ah *AuthHandler) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dto.ToUserResponse(user)
+	response := ToUserResponse(user)
 
 	authToken, err := jwt.NewToken(jwt.SigningKey, user.ID)
 	if err != nil {

@@ -7,7 +7,6 @@ import (
 	"github.com/go-chi/render"
 
 	"github.com/ivas1ly/gophermart/internal/api/controller"
-	"github.com/ivas1ly/gophermart/internal/api/controller/dto"
 )
 
 func (bh *BalanceHandler) balance(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +23,7 @@ func (bh *BalanceHandler) balance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := dto.ToUserBalanceResponse(currentBalance)
+	response := ToUserBalanceResponse(currentBalance)
 
 	w.WriteHeader(http.StatusOK)
 	render.JSON(w, r, response)

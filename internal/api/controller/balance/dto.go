@@ -1,4 +1,4 @@
-package dto
+package controller
 
 import (
 	"time"
@@ -16,7 +16,7 @@ type BalanceResponse struct {
 func ToUserBalanceResponse(userBalance *entity.Balance) *BalanceResponse {
 	decimal.MarshalJSONWithoutQuotes = true
 
-	divValue := decimal.NewFromInt(DecimalPartDiv)
+	divValue := decimal.NewFromInt(entity.DecimalPartDiv)
 
 	decimalBalance := decimal.NewFromInt(userBalance.Balance).Div(divValue)
 	decimalWithdrawn := decimal.NewFromInt(userBalance.Withdrawn).Div(divValue)
@@ -43,7 +43,7 @@ func ToWithdrawalsResponse(withdrawals []entity.Withdraw) []WithdrawResponse {
 
 	decimal.MarshalJSONWithoutQuotes = true
 
-	divValue := decimal.NewFromInt(DecimalPartDiv)
+	divValue := decimal.NewFromInt(entity.DecimalPartDiv)
 
 	for _, withdraw := range withdrawals {
 		response := WithdrawResponse{

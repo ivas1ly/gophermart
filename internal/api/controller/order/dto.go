@@ -1,4 +1,4 @@
-package dto
+package controller
 
 import (
 	"time"
@@ -6,10 +6,6 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/ivas1ly/gophermart/internal/entity"
-)
-
-const (
-	DecimalPartDiv = 100
 )
 
 type OrderResponse struct {
@@ -36,7 +32,7 @@ func ToOrdersResponse(orders []entity.Order) []OrdersResponse {
 
 	decimal.MarshalJSONWithoutQuotes = true
 
-	divValue := decimal.NewFromInt(DecimalPartDiv)
+	divValue := decimal.NewFromInt(entity.DecimalPartDiv)
 
 	for _, order := range orders {
 		accrual := order.Accrual

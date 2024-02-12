@@ -13,7 +13,6 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/ivas1ly/gophermart/internal/api/controller"
-	"github.com/ivas1ly/gophermart/internal/api/controller/dto"
 	"github.com/ivas1ly/gophermart/internal/entity"
 	"github.com/ivas1ly/gophermart/pkg/lunh"
 )
@@ -25,7 +24,7 @@ func (bh *BalanceHandler) withdraw(w http.ResponseWriter, r *http.Request) {
 
 	userID := token.Subject()
 
-	var wr dto.WithdrawRequest
+	var wr WithdrawRequest
 	defer r.Body.Close()
 
 	err := json.NewDecoder(r.Body).Decode(&wr)
@@ -54,14 +53,14 @@ func (bh *BalanceHandler) withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	okSum := wr.Sum.GreaterThanOrEqual(decimal.NewFromInt(1).Div(decimal.NewFromInt(dto.DecimalPartDiv)))
+	okSum := wr.Sum.GreaterThanOrEqual(decimal.NewFromInt(1).Div(decimal.NewFromInt(entity.DecimalPartDiv)))
 	if !okSum {
 		w.WriteHeader(http.StatusBadRequest)
 		render.JSON(w, r, render.M{"message": "the amount to be withdrawn is less than the minimum amount"})
 		return
 	}
 
-	intSum := wr.Sum.Mul(decimal.NewFromInt(dto.DecimalPartDiv)).IntPart()
+	intSum := wr.Sum.Mul(decimal.NewFromInt(entity.DecimalPartDiv)).IntPart()
 
 	err = bh.balanceService.NewWithdrawal(r.Context(), userID, wr.Order, intSum)
 	if errors.Is(err, entity.ErrNotEnoughPointsToWithdraw) {
