@@ -23,7 +23,7 @@ func NewAccrualWorkerRepository(db *postgres.DB) *AccrualWorkerRepository {
 	}
 }
 
-func (r *AccrualWorkerRepository) GetOrdersToProcess(ctx context.Context) ([]entity.Order, error) {
+func (r *AccrualWorkerRepository) GetOrdersToProcess(ctx context.Context, count int) ([]entity.Order, error) {
 	tx, err := r.db.Pool.Begin(ctx)
 	if err != nil {
 		return nil, err
@@ -35,6 +35,25 @@ func (r *AccrualWorkerRepository) GetOrdersToProcess(ctx context.Context) ([]ent
 		}
 	}(tx)
 
+	newOrders, err := r.getNewOrders(ctx, tx, count)
+	if err != nil {
+		return nil, err
+	}
+
+	toProcess, err := r.updateOrderStatus(ctx, tx, newOrders)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return toProcess, nil
+}
+
+func (r *AccrualWorkerRepository) getNewOrders(ctx context.Context, tx pgx.Tx, count int) ([]entity.Order, error) {
 	querySelect := r.db.Builder.
 		Select("id, user_id, number, status, accrual, created_at, updated_at, deleted_at").
 		From("orders").
@@ -47,21 +66,9 @@ func (r *AccrualWorkerRepository) GetOrdersToProcess(ctx context.Context) ([]ent
 			},
 		}).
 		OrderBy("created_at ASC").
-		Limit(defaultWorkerEntities)
+		Limit(uint64(count))
 
-	queryUpdate := r.db.Builder.
-		Update("orders").
-		SetMap(
-			sq.Eq{
-				"status":     entity.StatusProcessing.String(),
-				"updated_at": time.Now(),
-			},
-		).
-		FromSelect(querySelect, "subquery").
-		Suffix("RETURNING orders.id, orders.user_id, orders.number, orders.status, " +
-			"orders.accrual, orders.created_at, orders.updated_at, orders.deleted_at")
-
-	sql, args, err := queryUpdate.ToSql()
+	sql, args, err := querySelect.ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -97,12 +104,66 @@ func (r *AccrualWorkerRepository) GetOrdersToProcess(ctx context.Context) ([]ent
 		return nil, entity.ErrNoOrdersFound
 	}
 
-	err = tx.Commit(ctx)
+	return repoEntity.ToOrdersFromRepo(orders), nil
+}
+
+func (r *AccrualWorkerRepository) updateOrderStatus(ctx context.Context, tx pgx.Tx,
+	orders []entity.Order) ([]entity.Order, error) {
+	queryUpdate := r.db.Builder.
+		Update("orders").
+		SetMap(
+			sq.Eq{
+				"status":     entity.StatusProcessing.String(),
+				"updated_at": time.Now(),
+			},
+		)
+
+	ordersToUpdate := sq.Or{}
+	for _, order := range orders {
+		ordersToUpdate = append(ordersToUpdate, sq.Eq{"id": order.ID})
+	}
+
+	queryUpdate = queryUpdate.
+		Where(ordersToUpdate).
+		Suffix("RETURNING id, user_id, number, status, accrual, created_at, updated_at, deleted_at")
+
+	sql, args, err := queryUpdate.ToSql()
 	if err != nil {
 		return nil, err
 	}
 
-	return repoEntity.ToOrdersFromRepo(orders), nil
+	rows, err := tx.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	updatedOrders := make([]repoEntity.Order, 0, DefaultEntityCap)
+
+	for rows.Next() {
+		order := repoEntity.Order{}
+
+		err = rows.Scan(
+			&order.ID,
+			&order.UserID,
+			&order.Number,
+			&order.Status,
+			&order.Accrual,
+			&order.CreatedAt,
+			&order.UpdatedAt,
+			&order.DeletedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		updatedOrders = append(updatedOrders, order)
+	}
+	if len(orders) == 0 {
+		return nil, entity.ErrNoOrdersFound
+	}
+
+	return repoEntity.ToOrdersFromRepo(updatedOrders), nil
 }
 
 func (r *AccrualWorkerRepository) UpdateOrderAndUserBalance(ctx context.Context, order entity.Order) error {

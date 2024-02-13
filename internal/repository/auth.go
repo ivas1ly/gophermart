@@ -14,8 +14,6 @@ import (
 	repoEntity "github.com/ivas1ly/gophermart/internal/repository/entity"
 )
 
-const defaultWorkerEntities = 5
-
 type AuthRepository struct {
 	db *postgres.DB
 }

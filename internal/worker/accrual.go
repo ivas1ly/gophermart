@@ -11,12 +11,14 @@ import (
 	"github.com/ivas1ly/gophermart/internal/entity"
 )
 
+const defaultWorkerEntities = 5
+
 type AccrualClient interface {
 	GetOrderStatus(id string) (string, int64, error)
 }
 
 type AccrualWorkerRepository interface {
-	GetOrdersToProcess(ctx context.Context) ([]entity.Order, error)
+	GetOrdersToProcess(ctx context.Context, count int) ([]entity.Order, error)
 	UpdateOrderAndUserBalance(ctx context.Context, order entity.Order) error
 }
 
@@ -67,7 +69,7 @@ func (w *AccrualWorker) getNewOrders(ctx context.Context) (chan []entity.Order, 
 				return
 			case <-updateTicker.C:
 				w.log.Info("trying to get new orders")
-				orders, err := w.ar.GetOrdersToProcess(ctx)
+				orders, err := w.ar.GetOrdersToProcess(ctx, defaultWorkerEntities)
 				if err != nil {
 					w.log.Info("can't get new orders", zap.Error(err))
 					continue
