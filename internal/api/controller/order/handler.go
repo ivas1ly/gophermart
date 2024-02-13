@@ -12,7 +12,7 @@ import (
 )
 
 type OrderService interface {
-	AddOrder(ctx context.Context, userID, orderNumber string) (*entity.Order, error)
+	AddOrder(ctx context.Context, orderInfo *entity.OrderInfo) (*entity.Order, error)
 	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
 }
 

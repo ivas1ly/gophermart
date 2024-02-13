@@ -35,3 +35,9 @@ func (s Status) String() string {
 	}
 	return "UNKNOWN"
 }
+
+type OrderInfo struct {
+	ID     string
+	UserID string
+	Number string
+}

@@ -26,7 +26,7 @@ func NewAuthRepository(db *postgres.DB) *AuthRepository {
 	}
 }
 
-func (r *AuthRepository) AddUser(ctx context.Context, id, username, password string) (*entity.User, error) {
+func (r *AuthRepository) AddUser(ctx context.Context, userInfo *entity.UserInfo) (*entity.User, error) {
 	user := &repoEntity.User{}
 
 	tx, err := r.db.Pool.Begin(ctx)
@@ -43,7 +43,7 @@ func (r *AuthRepository) AddUser(ctx context.Context, id, username, password str
 	query := r.db.Builder.
 		Insert("users").
 		Columns("id, username, password_hash").
-		Values(id, username, password).
+		Values(userInfo.ID, userInfo.Username, userInfo.Hash).
 		Suffix("RETURNING id, username, password_hash, created_at, updated_at, deleted_at")
 
 	sql, args, err := query.ToSql()

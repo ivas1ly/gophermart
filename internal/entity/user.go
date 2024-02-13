@@ -11,3 +11,10 @@ type User struct {
 	Hash      string
 	Balance   int64
 }
+
+type UserInfo struct {
+	ID       string
+	Username string
+	Password string
+	Hash     string
+}

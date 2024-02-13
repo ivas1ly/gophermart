@@ -21,3 +21,10 @@ type Withdraw struct {
 	OrderNumber string
 	Withdrawn   int64
 }
+
+type WithdrawInfo struct {
+	ID          string
+	UserID      string
+	OrderNumber string
+	Sum         int64
+}

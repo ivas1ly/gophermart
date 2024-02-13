@@ -23,7 +23,7 @@ func NewOrderRepository(db *postgres.DB) *OrderRepository {
 	}
 }
 
-func (r *OrderRepository) AddOrder(ctx context.Context, orderID, userID, number string) (*entity.Order, error) {
+func (r *OrderRepository) AddOrder(ctx context.Context, orderInfo *entity.OrderInfo) (*entity.Order, error) {
 	order := &repoEntity.Order{}
 
 	tx, err := r.db.Pool.Begin(ctx)
@@ -41,7 +41,7 @@ func (r *OrderRepository) AddOrder(ctx context.Context, orderID, userID, number 
 		Select("id, user_id, number, status, accrual, created_at, updated_at, deleted_at").
 		From("orders").
 		Where(sq.Eq{
-			"number": number,
+			"number": orderInfo.Number,
 		})
 
 	sql, args, err := checkQuery.ToSql()
@@ -72,7 +72,7 @@ func (r *OrderRepository) AddOrder(ctx context.Context, orderID, userID, number 
 	query := r.db.Builder.
 		Insert("orders").
 		Columns("id, user_id, number, status, accrual").
-		Values(orderID, userID, number, entity.StatusNew.String(), 0).
+		Values(orderInfo.ID, orderInfo.UserID, orderInfo.Number, entity.StatusNew.String(), 0).
 		Suffix("RETURNING id, user_id, number, status, accrual, created_at, updated_at, deleted_at")
 
 	sql, args, err = query.ToSql()

@@ -62,7 +62,13 @@ func (bh *BalanceHandler) withdraw(w http.ResponseWriter, r *http.Request) {
 
 	intSum := wr.Sum.Mul(decimal.NewFromInt(entity.DecimalPartDiv)).IntPart()
 
-	err = bh.balanceService.AddWithdrawal(r.Context(), userID, wr.Order, intSum)
+	withdrawInfo := &entity.WithdrawInfo{
+		UserID:      userID,
+		OrderNumber: wr.Order,
+		Sum:         intSum,
+	}
+
+	err = bh.balanceService.AddWithdrawal(r.Context(), withdrawInfo)
 	if errors.Is(err, entity.ErrNotEnoughPointsToWithdraw) {
 		w.WriteHeader(http.StatusPaymentRequired)
 		render.JSON(w, r, render.M{"message": entity.ErrNotEnoughPointsToWithdraw.Error()})

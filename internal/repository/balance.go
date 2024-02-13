@@ -55,8 +55,7 @@ func (r *BalanceRepository) GetUserBalance(ctx context.Context, userID string) (
 	return repoEntity.ToUserBalanceFromRepo(userBalance), nil
 }
 
-func (r *BalanceRepository) AddWithdrawal(ctx context.Context, userID, withdrawalID, orderNumber string,
-	sum int64) error {
+func (r *BalanceRepository) AddWithdrawal(ctx context.Context, withdrawInfo *entity.WithdrawInfo) error {
 	tx, err := r.db.Pool.Begin(ctx)
 	if err != nil {
 		return err
@@ -71,10 +70,10 @@ func (r *BalanceRepository) AddWithdrawal(ctx context.Context, userID, withdrawa
 	queryUpdateBalance := r.db.Builder.
 		Update("users").
 		SetMap(sq.Eq{
-			"current_balance": sq.Expr("current_balance - ?", sum),
+			"current_balance": sq.Expr("current_balance - ?", withdrawInfo.Sum),
 		}).
 		Where(sq.Eq{
-			"id": userID,
+			"id": withdrawInfo.UserID,
 		})
 
 	sql, args, err := queryUpdateBalance.ToSql()
@@ -95,7 +94,7 @@ func (r *BalanceRepository) AddWithdrawal(ctx context.Context, userID, withdrawa
 	queryNewWithdrawal := r.db.Builder.
 		Insert("withdrawals").
 		Columns("id, user_id, order_number, withdrawn").
-		Values(withdrawalID, userID, orderNumber, sum)
+		Values(withdrawInfo.ID, withdrawInfo.UserID, withdrawInfo.OrderNumber, withdrawInfo.Sum)
 
 	sql, args, err = queryNewWithdrawal.ToSql()
 	if err != nil {

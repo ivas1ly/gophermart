@@ -14,7 +14,7 @@ import (
 
 type BalanceService interface {
 	GetCurrentBalance(ctx context.Context, userID string) (*entity.Balance, error)
-	AddWithdrawal(ctx context.Context, userID, orderNumber string, sum int64) error
+	AddWithdrawal(ctx context.Context, withdrawInfo *entity.WithdrawInfo) error
 	GetWithdrawals(ctx context.Context, userID string) ([]entity.Withdraw, error)
 }
 

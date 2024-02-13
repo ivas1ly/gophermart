@@ -10,7 +10,7 @@ import (
 )
 
 type AuthRepository interface {
-	AddUser(ctx context.Context, id, username, hash string) (*entity.User, error)
+	AddUser(ctx context.Context, userInfo *entity.UserInfo) (*entity.User, error)
 	FindUser(ctx context.Context, username string) (*entity.User, error)
 }
 
@@ -35,7 +35,13 @@ func (s *AuthService) Register(ctx context.Context, username, password string) (
 		return nil, err
 	}
 
-	user, err := s.authRepository.AddUser(ctx, userUUID.String(), username, hash)
+	userInfo := &entity.UserInfo{
+		ID:       userUUID.String(),
+		Username: username,
+		Hash:     hash,
+	}
+
+	user, err := s.authRepository.AddUser(ctx, userInfo)
 	if err != nil {
 		return nil, err
 	}
