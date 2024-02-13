@@ -55,7 +55,7 @@ func (r *BalanceRepository) GetUserBalance(ctx context.Context, userID string) (
 	return repoEntity.ToUserBalanceFromRepo(userBalance), nil
 }
 
-func (r *BalanceRepository) NewWithdrawal(ctx context.Context, userID, withdrawalID, orderNumber string,
+func (r *BalanceRepository) AddWithdrawal(ctx context.Context, userID, withdrawalID, orderNumber string,
 	sum int64) error {
 	tx, err := r.db.Pool.Begin(ctx)
 	if err != nil {

@@ -10,8 +10,8 @@ import (
 )
 
 type AuthRepository interface {
-	Create(ctx context.Context, id, username, hash string) (*entity.User, error)
-	Find(ctx context.Context, username string) (*entity.User, error)
+	AddUser(ctx context.Context, id, username, hash string) (*entity.User, error)
+	FindUser(ctx context.Context, username string) (*entity.User, error)
 }
 
 type AuthService struct {
@@ -35,7 +35,7 @@ func (s *AuthService) Register(ctx context.Context, username, password string) (
 		return nil, err
 	}
 
-	user, err := s.authRepository.Create(ctx, userUUID.String(), username, hash)
+	user, err := s.authRepository.AddUser(ctx, userUUID.String(), username, hash)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (s *AuthService) Register(ctx context.Context, username, password string) (
 }
 
 func (s *AuthService) Login(ctx context.Context, username, password string) (*entity.User, error) {
-	user, err := s.authRepository.Find(ctx, username)
+	user, err := s.authRepository.FindUser(ctx, username)
 	if err != nil {
 		return nil, err
 	}

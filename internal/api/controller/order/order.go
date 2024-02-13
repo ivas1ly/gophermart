@@ -41,7 +41,7 @@ func (oh *OrderHandler) order(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := oh.orderService.NewOrder(r.Context(), userID, orderNumber)
+	order, err := oh.orderService.AddOrder(r.Context(), userID, orderNumber)
 	if errors.Is(err, entity.ErrUploadedByThisUser) {
 		w.WriteHeader(http.StatusOK)
 		render.JSON(w, r, render.M{"message": entity.ErrUploadedByThisUser.Error()})

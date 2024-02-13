@@ -21,13 +21,13 @@ type AuthService interface {
 }
 
 type OrderService interface {
-	NewOrder(ctx context.Context, userID, orderNumber string) (*entity.Order, error)
+	AddOrder(ctx context.Context, userID, orderNumber string) (*entity.Order, error)
 	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
 }
 
 type BalanceService interface {
 	GetCurrentBalance(ctx context.Context, userID string) (*entity.Balance, error)
-	NewWithdrawal(ctx context.Context, userID, orderNumber string, sum int64) error
+	AddWithdrawal(ctx context.Context, userID, orderNumber string, sum int64) error
 	GetWithdrawals(ctx context.Context, userID string) ([]entity.Withdraw, error)
 }
 
@@ -37,18 +37,18 @@ type AccrualWorkerService interface {
 }
 
 type AuthRepository interface {
-	Create(ctx context.Context, id, username, hash string) (*entity.User, error)
-	Find(ctx context.Context, username string) (*entity.User, error)
+	AddUser(ctx context.Context, id, username, hash string) (*entity.User, error)
+	FindUser(ctx context.Context, username string) (*entity.User, error)
 }
 
 type OrderRepository interface {
-	NewOrder(ctx context.Context, orderID, userID, orderNumber string) (*entity.Order, error)
+	AddOrder(ctx context.Context, orderID, userID, orderNumber string) (*entity.Order, error)
 	GetOrders(ctx context.Context, userID string) ([]entity.Order, error)
 }
 
 type BalanceRepository interface {
 	GetUserBalance(ctx context.Context, userID string) (*entity.Balance, error)
-	NewWithdrawal(ctx context.Context, userID, withdrawalID, orderNumber string, sum int64) error
+	AddWithdrawal(ctx context.Context, userID, withdrawalID, orderNumber string, sum int64) error
 	GetWithdrawals(ctx context.Context, userID string) ([]entity.Withdraw, error)
 }
 

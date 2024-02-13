@@ -26,7 +26,7 @@ func NewAuthRepository(db *postgres.DB) *AuthRepository {
 	}
 }
 
-func (r *AuthRepository) Create(ctx context.Context, id, username, password string) (*entity.User, error) {
+func (r *AuthRepository) AddUser(ctx context.Context, id, username, password string) (*entity.User, error) {
 	user := &repoEntity.User{}
 
 	tx, err := r.db.Pool.Begin(ctx)
@@ -78,7 +78,7 @@ func (r *AuthRepository) Create(ctx context.Context, id, username, password stri
 	return repoEntity.ToUserFromRepo(user), nil
 }
 
-func (r *AuthRepository) Find(ctx context.Context, username string) (*entity.User, error) {
+func (r *AuthRepository) FindUser(ctx context.Context, username string) (*entity.User, error) {
 	user := &repoEntity.User{}
 
 	query := r.db.Builder.

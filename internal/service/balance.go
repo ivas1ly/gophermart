@@ -10,7 +10,7 @@ import (
 
 type BalanceRepository interface {
 	GetUserBalance(ctx context.Context, userID string) (*entity.Balance, error)
-	NewWithdrawal(ctx context.Context, userID, withdrawalID, orderNumber string, sum int64) error
+	AddWithdrawal(ctx context.Context, userID, withdrawalID, orderNumber string, sum int64) error
 	GetWithdrawals(ctx context.Context, userID string) ([]entity.Withdraw, error)
 }
 
@@ -33,13 +33,13 @@ func (s *BalanceService) GetCurrentBalance(ctx context.Context, userID string) (
 	return currentBalance, nil
 }
 
-func (s *BalanceService) NewWithdrawal(ctx context.Context, userID, orderNumber string, sum int64) error {
+func (s *BalanceService) AddWithdrawal(ctx context.Context, userID, orderNumber string, sum int64) error {
 	withdrawalUUID, err := uuid.NewV7()
 	if err != nil {
 		return err
 	}
 
-	err = s.balanceRepository.NewWithdrawal(ctx, userID, withdrawalUUID.String(), orderNumber, sum)
+	err = s.balanceRepository.AddWithdrawal(ctx, userID, withdrawalUUID.String(), orderNumber, sum)
 	if err != nil {
 		return err
 	}

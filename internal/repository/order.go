@@ -23,7 +23,7 @@ func NewOrderRepository(db *postgres.DB) *OrderRepository {
 	}
 }
 
-func (r *OrderRepository) NewOrder(ctx context.Context, orderID, userID, number string) (*entity.Order, error) {
+func (r *OrderRepository) AddOrder(ctx context.Context, orderID, userID, number string) (*entity.Order, error) {
 	order := &repoEntity.Order{}
 
 	tx, err := r.db.Pool.Begin(ctx)
