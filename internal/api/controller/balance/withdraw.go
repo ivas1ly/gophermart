@@ -17,7 +17,7 @@ import (
 	"github.com/ivas1ly/gophermart/pkg/lunh"
 )
 
-func (bh *BalanceHandler) withdraw(w http.ResponseWriter, r *http.Request) {
+func (bh *BalanceHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	token, _, _ := jwtauth.FromContext(r.Context())

@@ -14,7 +14,7 @@ import (
 	"github.com/ivas1ly/gophermart/pkg/lunh"
 )
 
-func (oh *OrderHandler) order(w http.ResponseWriter, r *http.Request) {
+func (oh *OrderHandler) Order(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	token, _, _ := jwtauth.FromContext(r.Context())

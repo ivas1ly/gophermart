@@ -9,7 +9,7 @@ import (
 	"github.com/ivas1ly/gophermart/internal/api/controller"
 )
 
-func (bh *BalanceHandler) balance(w http.ResponseWriter, r *http.Request) {
+func (bh *BalanceHandler) Balance(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	token, _, _ := jwtauth.FromContext(r.Context())

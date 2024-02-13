@@ -1,14 +1,8 @@
-package app
+package provider
 
 import (
 	"context"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-playground/validator/v10"
-
-	auth "github.com/ivas1ly/gophermart/internal/api/controller/auth"
-	balance "github.com/ivas1ly/gophermart/internal/api/controller/balance"
-	order "github.com/ivas1ly/gophermart/internal/api/controller/order"
 	"github.com/ivas1ly/gophermart/internal/entity"
 	"github.com/ivas1ly/gophermart/internal/lib/storage/postgres"
 	"github.com/ivas1ly/gophermart/internal/repository"
@@ -76,16 +70,6 @@ func (s *ServiceProvider) RegisterServices() {
 	s.NewOrderService()
 	s.NewAuthService()
 	s.NewBalanceService()
-}
-
-func (s *ServiceProvider) RegisterHandlers(router *chi.Mux, validate *validator.Validate) *chi.Mux {
-	router.Route("/api/user", func(r chi.Router) {
-		auth.NewAuthHandler(s.AuthService, validate).Register(r)
-		order.NewOrderHandler(s.OrderService).Register(r)
-		balance.NewBalanceHandler(s.BalanceService, validate).Register(r)
-	})
-
-	return router
 }
 
 func (s *ServiceProvider) newAuthRepository() AuthRepository {

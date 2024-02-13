@@ -11,7 +11,7 @@ import (
 	"github.com/ivas1ly/gophermart/internal/entity"
 )
 
-func (bh *BalanceHandler) withdrawals(w http.ResponseWriter, r *http.Request) {
+func (bh *BalanceHandler) Withdrawals(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	token, _, _ := jwtauth.FromContext(r.Context())

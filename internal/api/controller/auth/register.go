@@ -14,7 +14,7 @@ import (
 	"github.com/ivas1ly/gophermart/pkg/jwt"
 )
 
-func (ah *AuthHandler) register(w http.ResponseWriter, r *http.Request) {
+func (ah *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	var ur UserRequest

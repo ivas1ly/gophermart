@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ivas1ly/gophermart/internal/api/router"
+	"github.com/ivas1ly/gophermart/internal/app/provider"
 	"github.com/ivas1ly/gophermart/internal/config"
 	"github.com/ivas1ly/gophermart/internal/lib/client"
 	"github.com/ivas1ly/gophermart/internal/lib/logger"
@@ -64,11 +65,13 @@ func NewApp(ctx context.Context, cfg config.Config) (*App, error) {
 	a.router = router.NewRouter(cfg.HTTP, a.log)
 
 	a.log.Info("init services")
-	serviceProvider := NewServiceProvider(db)
+	// "provider" name to avoid import cycle
+	serviceProvider := provider.NewServiceProvider(db)
 	serviceProvider.RegisterServices()
 
+	a.log.Info("init api routes")
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	serviceProvider.RegisterHandlers(a.router, validate)
+	router.RegisterRoutes(a.router, serviceProvider, validate)
 
 	accrualClient := client.NewAccrualClient(cfg.AccrualSystemAddress, cfg.ClientTimeout, a.log)
 	a.worker = worker.NewAccrualWorker(accrualClient, repository.NewAccrualWorkerRepository(a.db),
@@ -111,7 +114,7 @@ func (a *App) startHTTP(ctx context.Context) error {
 
 	err := chi.Walk(a.router, func(method string, route string, _ http.Handler,
 		middlewares ...func(http.Handler) http.Handler) error {
-		a.log.Debug(fmt.Sprintf("[%s]: '%s' has %d middlewares", method, route, len(middlewares)))
+		a.log.Info(fmt.Sprintf("[%s]: '%s' has %d middlewares", method, route, len(middlewares)))
 		return nil
 	})
 	if err != nil {

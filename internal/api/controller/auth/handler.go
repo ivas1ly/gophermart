@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 
@@ -32,11 +31,4 @@ func NewAuthHandler(authService AuthService, validate *validator.Validate) *Auth
 		log:         zap.L().With(zap.String("handler", "auth")),
 		validate:    validate,
 	}
-}
-
-func (ah *AuthHandler) Register(router chi.Router) {
-	router.Group(func(r chi.Router) {
-		r.Post("/login", ah.login)
-		r.Post("/register", ah.register)
-	})
 }
